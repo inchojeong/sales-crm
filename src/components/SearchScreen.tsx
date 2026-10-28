@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { isEventAttendance } from '../attendance'
+import { useDirectory } from '../directory'
 import { Timeline } from './ActivityRow'
 import { useCrm } from '../store'
 import { STATUS_META, TYPE_META, TYPE_ORDER, purposeLabel } from '../templates'
@@ -8,6 +9,7 @@ import { useUI } from '../ui'
 
 export function SearchScreen() {
   const { db, companyById, contactById, eventById } = useCrm()
+  const directory = useDirectory()
   const { route } = useUI()
   const routeQuery = route.name === 'search' ? route.q ?? '' : ''
   const [query, setQuery] = useState(routeQuery)
@@ -31,7 +33,9 @@ export function SearchScreen() {
       if (from && activity.date < from) return false
       if (to && activity.date > to) return false
       if (!needle) return true
-      const company = activity.companyId ? companyById.get(activity.companyId) : undefined
+      const company = activity.companyId
+        ? directory.companyById.get(activity.companyId) ?? companyById.get(activity.companyId)
+        : undefined
       const event = activity.eventId ? eventById.get(activity.eventId) : undefined
       const contacts = activity.contactIds
         .map((id) => contactById.get(id))
@@ -51,9 +55,11 @@ export function SearchScreen() {
         .toLowerCase()
       return haystack.includes(needle)
     })
-  }, [db.activities, query, type, status, companyId, from, to, companyById, contactById, eventById])
+  }, [db.activities, query, type, status, companyId, from, to, companyById, contactById, eventById, directory.companyById])
 
-  const companies = [...db.companies].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+  const companies = [...(directory.remote ? directory.companies : db.companies)].sort((a, b) =>
+    a.name.localeCompare(b.name, 'ko'),
+  )
   const filtered = Boolean(query || type || status || companyId || from || to)
 
   return (

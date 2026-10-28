@@ -13,6 +13,7 @@ import {
   weekdayLabel,
 } from '../dates'
 import { isEventAttendance } from '../attendance'
+import { useDirectory } from '../directory'
 import { TYPE_META, TYPE_ORDER } from '../templates'
 import type { Activity, ActivityType, SalesEvent } from '../types'
 import { useCrm } from '../store'
@@ -68,6 +69,7 @@ function eventDays(event: SalesEvent) {
 
 export function CalendarScreen() {
   const { db, companyById } = useCrm()
+  const directory = useDirectory()
   const { openCreate, openEdit, go } = useUI()
   const today = todayKey()
   const [selected, setSelected] = useState(today)
@@ -97,7 +99,9 @@ export function CalendarScreen() {
     for (const activity of db.activities) {
       if (isEventAttendance(activity)) continue
       if (typeFilter && activity.type !== typeFilter) continue
-      const company = activity.companyId ? companyById.get(activity.companyId)?.name : ''
+      const company = activity.companyId
+        ? directory.companyById.get(activity.companyId)?.name ?? companyById.get(activity.companyId)?.name
+        : ''
       if (query && !`${activity.title} ${company ?? ''} ${activity.notes} ${activity.opinion}`.includes(query)) continue
       ensure(activity.date).activities.push(activity)
     }
@@ -105,7 +109,7 @@ export function CalendarScreen() {
       plan.activities.sort((a, b) => (a.startTime ?? '99:99').localeCompare(b.startTime ?? '99:99') || a.createdAt.localeCompare(b.createdAt))
     }
     return map
-  }, [db.activities, db.events, companyById, needle, typeFilter])
+  }, [db.activities, db.events, companyById, directory.companyById, needle, typeFilter])
 
   const cells = monthCells(selected)
   const selectedPlan = byDate.get(selected) ?? emptyDay()

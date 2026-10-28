@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
+import { supabase } from '../lib/supabase'
 import { useCrm } from '../store'
 import { sectionOf, useUI, type Route } from '../ui'
 
@@ -21,7 +22,8 @@ function readDismissed() {
 
 export function Shell({ children }: { children: ReactNode }) {
   const { route, go } = useUI()
-  const { resetDemo, currentUser } = useCrm()
+  const { resetDemo, currentUser, scheduleReady, scheduleError } = useCrm()
+  const shared = Boolean(supabase)
   const [hidden, setHidden] = useState(readDismissed)
   const [query, setQuery] = useState(route.name === 'search' ? route.q ?? '' : '')
   const active = sectionOf(route)
@@ -73,11 +75,13 @@ export function Shell({ children }: { children: ReactNode }) {
               </button>
             ))}
           </nav>
-          <div className="side-foot">
-            <button type="button" className="text-btn" onClick={reset}>
-              예시 데이터로 되돌리기
-            </button>
-          </div>
+          {!shared && (
+            <div className="side-foot">
+              <button type="button" className="text-btn" onClick={reset}>
+                예시 데이터로 되돌리기
+              </button>
+            </div>
+          )}
         </aside>
         <div className="workspace">
           <header className="workspace-top">
@@ -92,13 +96,13 @@ export function Shell({ children }: { children: ReactNode }) {
             </form>
             <div className="who">
               <span className="avatar" aria-hidden="true">
-                데
+                {currentUser.name.slice(0, 1)}
               </span>
               <span className="who-name">{currentUser.name}</span>
             </div>
           </header>
           <div className="workspace-body">
-            {!hidden && (
+            {!shared && !hidden && (
               <div className="banner">
                 <p>현재는 예시 데이터로 확인할 수 있습니다. 팀 공유 기능은 추후 제공됩니다.</p>
                 <button type="button" className="text-btn" onClick={dismiss}>
@@ -106,7 +110,8 @@ export function Shell({ children }: { children: ReactNode }) {
                 </button>
               </div>
             )}
-            {children}
+            {scheduleError ? <p className="error">{scheduleError}</p> : null}
+            {shared && !scheduleReady ? <p className="empty">일정을 불러오고 있습니다.</p> : children}
           </div>
         </div>
       </div>
