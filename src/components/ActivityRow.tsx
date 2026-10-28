@@ -1,4 +1,6 @@
+import { useBusiness } from '../business'
 import { formatDayTitle, formatFullDate } from '../dates'
+import { useDirectory } from '../directory'
 import { STATUS_META, TYPE_META, purposeLabel } from '../templates'
 import type { Activity, Contact } from '../types'
 import { useCrm } from '../store'
@@ -12,14 +14,20 @@ function contactText(contacts: Contact[]) {
 
 export function ActivityRow({ activity }: { activity: Activity }) {
   const { contactById } = useCrm()
+  const directory = useDirectory()
   const { openEdit } = useUI()
+  const portfolio = useBusiness()
+  const businessName = activity.businessId
+    ? portfolio.businesses.find((item) => item.id === activity.businessId)?.name
+    : undefined
   const contacts = activity.contactIds
-    .map((id) => contactById.get(id))
+    .map((id) => contactById.get(id) ?? directory.contacts.find((contact) => contact.id === id))
     .filter((contact): contact is Contact => Boolean(contact))
   const meta = [TYPE_META[activity.type].label, purposeLabel(activity.type, activity.purpose)]
   if (!activity.companyId) meta.push('내부 활동')
   const people = contactText(contacts)
   if (people) meta.push(people)
+  if (businessName) meta.push(businessName)
 
   return (
     <button type="button" className="arow" onClick={() => openEdit(activity.id)}>
@@ -37,6 +45,8 @@ export function ActivityRow({ activity }: { activity: Activity }) {
 
 export function RelationTimeline({ activities, empty }: { activities: Activity[]; empty?: string }) {
   const { contactById, eventById } = useCrm()
+  const directory = useDirectory()
+  const portfolio = useBusiness()
   const { openEdit } = useUI()
   const sorted = [...activities].sort(
     (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
@@ -47,11 +57,15 @@ export function RelationTimeline({ activities, empty }: { activities: Activity[]
     <div className="rel-list">
       {sorted.map((activity) => {
         const contacts = activity.contactIds
-          .map((id) => contactById.get(id))
+          .map((id) => contactById.get(id) ?? directory.contacts.find((contact) => contact.id === id))
           .filter((contact): contact is Contact => Boolean(contact))
         const eventName = activity.eventId ? eventById.get(activity.eventId)?.name : undefined
         const label = activity.type === 'event' && eventName ? eventName : purposeLabel(activity.type, activity.purpose) || TYPE_META[activity.type].label
         const person = relationPerson(contacts)
+        const businessName = activity.businessId
+          ? portfolio.businesses.find((item) => item.id === activity.businessId)?.name
+          : undefined
+        const who = [person, businessName].filter(Boolean).join(' · ')
         return (
           <button key={activity.id} type="button" className="rel-item" onClick={() => openEdit(activity.id)}>
             <span className="rel-icon" aria-hidden="true">
@@ -64,7 +78,7 @@ export function RelationTimeline({ activities, empty }: { activities: Activity[]
                 </strong>
                 {activity.status !== 'done' && <span className={`tag tag-${activity.status}`}>{STATUS_META[activity.status].label}</span>}
               </span>
-              {person && <span className="rel-who">{person}</span>}
+              {who && <span className="rel-who">{who}</span>}
               {activity.notes.trim() && <span className="rel-note">{activity.notes}</span>}
             </span>
           </button>

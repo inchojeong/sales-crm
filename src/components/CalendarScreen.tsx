@@ -12,8 +12,9 @@ import {
   weekdayIndex,
   weekdayLabel,
 } from '../dates'
+import { isEventAttendance } from '../attendance'
 import { TYPE_META, TYPE_ORDER } from '../templates'
-import type { Activity, ActivityType } from '../types'
+import type { Activity, ActivityType, SalesEvent } from '../types'
 import { useCrm } from '../store'
 import { useUI } from '../ui'
 import { ActivityRow } from './ActivityRow'
@@ -41,9 +42,33 @@ function formatClock(value: string) {
   return value.slice(0, 5)
 }
 
+interface DayPlan {
+  events: SalesEvent[]
+  activities: Activity[]
+}
+
+function emptyDay(): DayPlan {
+  return { events: [], activities: [] }
+}
+
+function eventDays(event: SalesEvent) {
+  const start = event.startDate
+  const end = !event.endDate || event.endDate < start ? start : event.endDate
+  if (!start) return []
+  const dates: string[] = []
+  let cursor = start
+  let guard = 0
+  while (cursor <= end && guard < 62) {
+    dates.push(cursor)
+    cursor = addDays(cursor, 1)
+    guard += 1
+  }
+  return dates
+}
+
 export function CalendarScreen() {
   const { db, companyById } = useCrm()
-  const { openCreate, openEdit } = useUI()
+  const { openCreate, openEdit, go } = useUI()
   const today = todayKey()
   const [selected, setSelected] = useState(today)
   const [mode, setMode] = useState<'month' | 'week'>('week')
@@ -52,24 +77,54 @@ export function CalendarScreen() {
 
   const byDate = useMemo(() => {
     const query = needle.trim()
-    const map = new Map<string, Activity[]>()
+    const map = new Map<string, DayPlan>()
+    const ensure = (date: string) => {
+      const current = map.get(date)
+      if (current) return current
+      const created = emptyDay()
+      map.set(date, created)
+      return created
+    }
+    const showEvents = !typeFilter || typeFilter === 'event'
+    if (showEvents) {
+      for (const event of db.events) {
+        const attendance = db.activities.filter((activity) => isEventAttendance(activity) && activity.eventId === event.id)
+        const haystack = [event.name, event.place, event.memo, ...attendance.map((activity) => `${activity.title} ${activity.notes} ${activity.opinion}`)].join(' ')
+        if (query && !haystack.includes(query)) continue
+        for (const date of eventDays(event)) ensure(date).events.push(event)
+      }
+    }
     for (const activity of db.activities) {
+      if (isEventAttendance(activity)) continue
       if (typeFilter && activity.type !== typeFilter) continue
       const company = activity.companyId ? companyById.get(activity.companyId)?.name : ''
-      if (query && !`${activity.title} ${company ?? ''} ${activity.notes}`.includes(query)) continue
-      const list = map.get(activity.date)
-      if (list) list.push(activity)
-      else map.set(activity.date, [activity])
+      if (query && !`${activity.title} ${company ?? ''} ${activity.notes} ${activity.opinion}`.includes(query)) continue
+      ensure(activity.date).activities.push(activity)
     }
-    for (const list of map.values()) {
-      list.sort((a, b) => (a.startTime ?? '99:99').localeCompare(b.startTime ?? '99:99') || a.createdAt.localeCompare(b.createdAt))
+    for (const plan of map.values()) {
+      plan.activities.sort((a, b) => (a.startTime ?? '99:99').localeCompare(b.startTime ?? '99:99') || a.createdAt.localeCompare(b.createdAt))
     }
     return map
-  }, [db.activities, companyById, needle, typeFilter])
+  }, [db.activities, db.events, companyById, needle, typeFilter])
 
   const cells = monthCells(selected)
-  const selectedItems = byDate.get(selected) ?? []
+  const selectedPlan = byDate.get(selected) ?? emptyDay()
   const weekDays = weekCells(selected)
+  const thisWeek = new Set(weekCells(today))
+  const visibleDays = [...byDate.values()]
+  const visible = visibleDays.flatMap((plan) => plan.activities)
+  const stats = [
+    { label: '오늘', value: (byDate.get(today)?.events.length ?? 0) + visible.filter((item) => item.date === today).length },
+    {
+      label: '이번 주',
+      value:
+        [...thisWeek].reduce((sum, date) => sum + (byDate.get(date)?.events.length ?? 0), 0) +
+        visible.filter((item) => thisWeek.has(item.date)).length,
+    },
+    { label: '예정', value: visible.filter((item) => item.status === 'planned').length },
+    { label: '완료', value: visible.filter((item) => item.status === 'done').length },
+    { label: '연기', value: visible.filter((item) => item.status === 'postponed').length },
+  ]
   const rangeLabel =
     mode === 'month' ? formatMonthTitle(selected) : `${formatDayTitle(weekDays[0])} – ${formatDayTitle(weekDays[6])}`
 
@@ -98,6 +153,15 @@ export function CalendarScreen() {
             + 영업활동 등록
           </button>
         </div>
+      </div>
+
+      <div className="dash-stats" aria-label="영업활동 요약">
+        {stats.map((item) => (
+          <div key={item.label} className="dash-stat">
+            <strong>{item.value}</strong>
+            <span>{item.label}</span>
+          </div>
+        ))}
       </div>
 
       <div className="cal-nav-row">
@@ -146,28 +210,63 @@ export function CalendarScreen() {
           <div className="cal-grid">
             {cells.map((date, index) => {
               if (!date) return <div key={`empty-${index}`} className="day empty" />
-              const items = byDate.get(date) ?? []
+              const plan = byDate.get(date) ?? emptyDay()
+              const marks = plan.events.length + plan.activities.length
               const className = ['day', date === selected ? 'selected' : '', date === today ? 'today' : '']
                 .filter(Boolean)
                 .join(' ')
               return (
-                <button
+                <div
                   key={date}
-                  type="button"
                   className={className}
-                  aria-pressed={date === selected}
-                  aria-label={`${formatFullDate(date)}, 영업활동 ${items.length}건`}
                   onClick={() => setSelected(date)}
                 >
-                  <span className="day-num">{Number(date.slice(-2))}</span>
+                  <button
+                    type="button"
+                    className="day-num"
+                    aria-pressed={date === selected}
+                    aria-label={`${formatFullDate(date)}, 일정 ${marks}건`}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setSelected(date)
+                    }}
+                  >
+                    {Number(date.slice(-2))}
+                  </button>
                   <span className="month-pills">
-                    {items.slice(0, 3).map((activity) => (
-                      <span key={activity.id} className="month-pill" style={{ background: CARD_TONE[activity.type].bg, color: CARD_TONE[activity.type].fg }}>
-                        {activity.title}
-                      </span>
+                    {plan.events.slice(0, 3).map((eventItem) => (
+                      <button
+                        key={eventItem.id}
+                        type="button"
+                        className="month-pill"
+                        style={{ background: CARD_TONE.event.bg, color: CARD_TONE.event.fg }}
+                        onClick={(click) => {
+                          click.stopPropagation()
+                          setSelected(date)
+                          go({ name: 'event', id: eventItem.id })
+                        }}
+                      >
+                        {eventItem.name}
+                      </button>
                     ))}
+                    {plan.activities.slice(0, Math.max(0, 3 - plan.events.length)).map((activity) => (
+                      <button
+                        key={activity.id}
+                        type="button"
+                        className="month-pill"
+                        style={{ background: CARD_TONE[activity.type].bg, color: CARD_TONE[activity.type].fg }}
+                        onClick={(click) => {
+                          click.stopPropagation()
+                          setSelected(date)
+                          openEdit(activity.id)
+                        }}
+                      >
+                        {activity.startTime ? `${formatClock(activity.startTime)} ${activity.title}` : activity.title}
+                      </button>
+                    ))}
+                    {marks > 3 && <span className="month-more">+{marks - 3}</span>}
                   </span>
-                </button>
+                </div>
               )
             })}
           </div>
@@ -179,7 +278,14 @@ export function CalendarScreen() {
           selected={selected}
           byDate={byDate}
           onSelect={setSelected}
-          onOpen={openEdit}
+          onOpen={(id, date) => {
+            setSelected(date)
+            openEdit(id)
+          }}
+          onOpenEvent={(id, date) => {
+            setSelected(date)
+            go({ name: 'event', id })
+          }}
           onCreate={(date, startTime) => {
             setSelected(date)
             openCreate({ date, startTime })
@@ -200,15 +306,27 @@ export function CalendarScreen() {
         <div className="day-panel-head">
           <h2>
             {formatDayTitle(selected)} 영업활동
-            <span className="count">{selectedItems.length}</span>
+            <span className="count">{selectedPlan.events.length + selectedPlan.activities.length}</span>
             {selected === today && <span className="today-pill">오늘</span>}
           </h2>
         </div>
-        {selectedItems.length === 0 ? (
-          <p className="empty">등록된 영업활동이 없습니다.</p>
+        {selectedPlan.events.length + selectedPlan.activities.length === 0 ? (
+          <p className="empty">등록된 일정이 없습니다.</p>
         ) : (
           <div className="rows">
-            {selectedItems.map((activity) => (
+            {selectedPlan.events.map((eventItem) => (
+              <button key={eventItem.id} type="button" className="arow" onClick={() => go({ name: 'event', id: eventItem.id })}>
+                <span className="aicon" aria-hidden="true">
+                  {eventItem.name.slice(0, 1)}
+                </span>
+                <span className="arow-body">
+                  <span className="arow-title">{eventItem.name}</span>
+                  <span className="arow-meta">{['행사', eventItem.place].filter(Boolean).join(' · ')}</span>
+                </span>
+                <span className="tag">행사</span>
+              </button>
+            ))}
+            {selectedPlan.activities.map((activity) => (
               <ActivityRow key={activity.id} activity={activity} />
             ))}
           </div>
@@ -225,14 +343,16 @@ function WeekBoard({
   byDate,
   onSelect,
   onOpen,
+  onOpenEvent,
   onCreate,
 }: {
   days: string[]
   today: string
   selected: string
-  byDate: Map<string, Activity[]>
+  byDate: Map<string, DayPlan>
   onSelect: (date: string) => void
-  onOpen: (id: string) => void
+  onOpen: (id: string, date: string) => void
+  onOpenEvent: (id: string, date: string) => void
   onCreate: (date: string, startTime: string) => void
 }) {
   return (
@@ -261,20 +381,31 @@ function WeekBoard({
         </div>
         <div className="time-cols">
           {days.map((date) => {
-            const items = byDate.get(date) ?? []
-            const untimed = items.filter((item) => !item.startTime)
-            const timed = items.filter((item) => item.startTime)
+            const plan = byDate.get(date) ?? emptyDay()
+            const untimed = plan.activities.filter((item) => !item.startTime)
+            const timed = plan.activities.filter((item) => item.startTime)
             return (
               <div key={date} className={['time-col', date === selected ? 'selected' : '', date === today ? 'today' : ''].filter(Boolean).join(' ')}>
-                {untimed.length > 0 && (
+                {(plan.events.length > 0 || untimed.length > 0) && (
                   <div className="untimed">
+                    {plan.events.map((eventItem) => (
+                      <button
+                        key={eventItem.id}
+                        type="button"
+                        className="event-card compact"
+                        style={{ background: CARD_TONE.event.bg, color: CARD_TONE.event.fg }}
+                        onClick={() => onOpenEvent(eventItem.id, date)}
+                      >
+                        {eventItem.name}
+                      </button>
+                    ))}
                     {untimed.map((activity) => (
                       <button
                         key={activity.id}
                         type="button"
                         className="event-card compact"
                         style={{ background: CARD_TONE[activity.type].bg, color: CARD_TONE[activity.type].fg }}
-                        onClick={() => onOpen(activity.id)}
+                        onClick={() => onOpen(activity.id, date)}
                       >
                         {activity.status === 'postponed' ? `연기 · ${activity.title}` : activity.title}
                       </button>
@@ -308,7 +439,7 @@ function WeekBoard({
                           background: CARD_TONE[activity.type].bg,
                           color: CARD_TONE[activity.type].fg,
                         }}
-                        onClick={() => onOpen(activity.id)}
+                        onClick={() => onOpen(activity.id, date)}
                       >
                         <strong>{activity.status === 'postponed' ? `연기 · ${activity.title}` : activity.title}</strong>
                         <span>

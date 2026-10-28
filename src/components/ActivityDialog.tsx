@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useBusiness } from '../business'
 import { addDays, defaultStatus, formatFullDate, todayKey } from '../dates'
+import { useDirectory } from '../directory'
 import { useCrm } from '../store'
 import { PURPOSES, STATUS_META, TYPE_META, TYPE_ORDER, autoTitle, purposeLabel } from '../templates'
 import type { Activity, ActivityStatus, ActivityType, DialogRequest } from '../types'
@@ -18,9 +20,11 @@ interface Draft {
   title: string
   titleTouched: boolean
   notes: string
+  opinion: string
   startTime: string
   endTime: string
   eventId: string | null
+  businessId: string | null
   newEventName: string
   relatedActivityId: string | null
   showMore: boolean
@@ -45,9 +49,11 @@ function blank(date: string): Draft {
     title: '',
     titleTouched: false,
     notes: '',
+    opinion: '',
     startTime: '',
     endTime: '',
     eventId: null,
+    businessId: null,
     newEventName: '',
     relatedActivityId: null,
     showMore: false,
@@ -69,9 +75,11 @@ function fromActivity(activity: Activity, mode: 'edit' | 'followup'): Draft {
       title: activity.title,
       titleTouched: true,
       notes: '',
+      opinion: '',
       startTime: activity.startTime ?? '',
       endTime: activity.endTime ?? '',
       eventId: activity.eventId,
+      businessId: activity.businessId,
       newEventName: '',
       relatedActivityId: activity.id,
       showMore: false,
@@ -90,9 +98,11 @@ function fromActivity(activity: Activity, mode: 'edit' | 'followup'): Draft {
     title: activity.title,
     titleTouched: true,
     notes: activity.notes,
+    opinion: activity.opinion ?? '',
     startTime: activity.startTime ?? '',
     endTime: activity.endTime ?? '',
     eventId: activity.eventId,
+    businessId: activity.businessId,
     newEventName: '',
     relatedActivityId: activity.relatedActivityId,
     showMore: false,
@@ -107,6 +117,7 @@ function buildInitial(request: DialogRequest, activities: Activity[]): Draft {
       companyId: request.companyId ?? null,
       contactIds: request.contactIds ? [...request.contactIds] : [],
       eventId: request.eventId ?? null,
+      businessId: request.businessId ?? null,
       startTime: request.startTime ?? '',
       endTime: '',
     }
@@ -118,11 +129,13 @@ function buildInitial(request: DialogRequest, activities: Activity[]): Draft {
 
 export function ActivityDialog({ request, onClose }: { request: DialogRequest; onClose: () => void }) {
   const { db, companyById, eventById, saveActivity, deleteActivity, currentUser } = useCrm()
+  const directory = useDirectory()
+  const portfolio = useBusiness()
   const { openEdit, openFollowup } = useUI()
   const [draft, setDraft] = useState<Draft>(() => buildInitial(request, db.activities))
   const [companyOpen, setCompanyOpen] = useState(false)
   const [companyQuery, setCompanyQuery] = useState('')
-  const [dateOpen, setDateOpen] = useState(request.mode === 'followup')
+  const [contactQuery, setContactQuery] = useState('')
   const [tried, setTried] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
   const companyRef = useRef<HTMLDivElement>(null)
@@ -158,7 +171,9 @@ export function ActivityDialog({ request, onClose }: { request: DialogRequest; o
     return () => document.removeEventListener('mousedown', onDoc)
   }, [companyOpen])
 
-  const company = draft.companyId ? companyById.get(draft.companyId) : undefined
+  const company = draft.companyId
+    ? companyById.get(draft.companyId) ?? directory.companyById.get(draft.companyId)
+    : undefined
   const generated = autoTitle({
     type: draft.type,
     companyName: company?.name,
@@ -166,7 +181,7 @@ export function ActivityDialog({ request, onClose }: { request: DialogRequest; o
   })
   const titleValue = draft.titleTouched ? draft.title : generated
   const employees = draft.companyId
-    ? db.contacts
+    ? (directory.companyById.has(draft.companyId) ? directory.contacts : db.contacts)
         .filter((contact) => contact.companyId === draft.companyId)
         .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
     : []
@@ -189,7 +204,14 @@ export function ActivityDialog({ request, onClose }: { request: DialogRequest; o
     .slice(0, 15)
   if (related && !relatedOptions.some((item) => item.id === related.id)) relatedOptions.unshift(related)
 
-  const companies = [...db.companies]
+  const selectedLocal = draft.companyId ? companyById.get(draft.companyId) : undefined
+  const companyOptions = directory.remote
+    ? [
+        ...directory.companies,
+        ...(selectedLocal && !directory.companyById.has(selectedLocal.id) ? [selectedLocal] : []),
+      ]
+    : [...db.companies]
+  const companies = companyOptions
     .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
     .filter((item) => {
       const query = companyQuery.trim()
@@ -228,10 +250,12 @@ export function ActivityDialog({ request, onClose }: { request: DialogRequest; o
       companyId: draft.companyId,
       contactIds: draft.contactIds,
       eventId: draft.newEventName.trim() ? null : draft.eventId,
+      businessId: draft.businessId,
       newEventName: draft.newEventName,
       purpose: draft.purpose,
       status: draft.status,
       notes: draft.notes,
+      opinion: draft.opinion,
       startTime: draft.startTime || null,
       endTime: draft.endTime || (draft.startTime ? plusHour(draft.startTime) : null),
       relatedActivityId: draft.relatedActivityId,
@@ -332,12 +356,9 @@ export function ActivityDialog({ request, onClose }: { request: DialogRequest; o
                 {formatFullDate(draft.date)} · 작성자 {author}
               </p>
             </div>
-            <div className="head-side">
-              <span className="badge">기록</span>
-              <button type="button" className="icon-btn" aria-label="닫기" onClick={onClose}>
-                ×
-              </button>
-            </div>
+            <button type="button" className="icon-btn" aria-label="닫기" onClick={onClose}>
+              ×
+            </button>
           </header>
           <div className="modal-body">
             {request.mode === 'followup' && related && (
@@ -361,27 +382,19 @@ export function ActivityDialog({ request, onClose }: { request: DialogRequest; o
               ))}
             </div>
 
-            <div className="date-line">
-              {dateOpen ? (
-                <label className="field">
-                  <span className="field-label">날짜</span>
-                  <input className="input" type="date" value={draft.date} onChange={(event) => changeDate(event.target.value)} />
-                </label>
-              ) : (
-                <button type="button" className="text-btn" onClick={() => setDateOpen(true)}>
-                  날짜 변경
-                </button>
-              )}
-              <div className="time-fields">
-                <label className="field">
-                  <span className="field-label">시작</span>
-                  <input className="input" type="time" value={draft.startTime} onChange={(event) => patch({ startTime: event.target.value })} />
-                </label>
-                <label className="field">
-                  <span className="field-label">종료</span>
-                  <input className="input" type="time" value={draft.endTime} onChange={(event) => patch({ endTime: event.target.value })} />
-                </label>
-              </div>
+            <div className="schedule-grid">
+              <label className="field">
+                <span className="field-label">날짜</span>
+                <input className="input" type="date" value={draft.date} onChange={(event) => changeDate(event.target.value)} />
+              </label>
+              <label className="field">
+                <span className="field-label">시작</span>
+                <input className="input" type="time" value={draft.startTime} onChange={(event) => patch({ startTime: event.target.value })} />
+              </label>
+              <label className="field">
+                <span className="field-label">종료</span>
+                <input className="input" type="time" value={draft.endTime} onChange={(event) => patch({ endTime: event.target.value })} />
+              </label>
             </div>
             <p className="hint">시간은 비워 둘 수 있습니다. 비워 두면 주간 캘린더에 종일 일정으로 표시됩니다.</p>
 
@@ -425,12 +438,13 @@ export function ActivityDialog({ request, onClose }: { request: DialogRequest; o
                       type="button"
                       className={item.id === draft.companyId ? 'option on' : 'option'}
                       onClick={() => {
-                        patch({
-                          companyId: item.id,
-                          contactIds: item.id === draft.companyId ? draft.contactIds : [],
-                        })
-                        setCompanyOpen(false)
-                        setCompanyQuery('')
+                      patch({
+                        companyId: item.id,
+                        contactIds: item.id === draft.companyId ? draft.contactIds : [],
+                      })
+                      setCompanyOpen(false)
+                      setCompanyQuery('')
+                      if (item.id !== draft.companyId) setContactQuery('')
                       }}
                     >
                       {item.name}
@@ -449,55 +463,112 @@ export function ActivityDialog({ request, onClose }: { request: DialogRequest; o
                   <p className="hint">등록된 담당자가 없습니다. 담당자 없이도 저장할 수 있습니다.</p>
                 ) : (
                   <div>
-                    {employees.map((contact) => {
-                      const checked = draft.contactIds.includes(contact.id)
-                      const detail = [contact.position, contact.department].filter(Boolean).join(' · ')
-                      return (
-                        <label key={contact.id} className={checked ? 'check on' : 'check'}>
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() =>
-                              patch({
-                                contactIds: checked
-                                  ? draft.contactIds.filter((id) => id !== contact.id)
-                                  : [...draft.contactIds, contact.id],
-                              })
-                            }
-                          />
-                          <span className="mark" aria-hidden="true" />
-                          <span>
-                            {contact.name}
-                            {detail ? ` ${detail}` : ''}
-                          </span>
-                        </label>
-                      )
-                    })}
+                    {draft.contactIds.length > 0 && (
+                      <div className="tokens">
+                        {draft.contactIds.map((id) => {
+                          const contact = employees.find((item) => item.id === id)
+                          if (!contact) return null
+                          return (
+                            <button
+                              key={id}
+                              type="button"
+                              className="token"
+                              onClick={() => patch({ contactIds: draft.contactIds.filter((item) => item !== id) })}
+                            >
+                              {contact.name}
+                              <span aria-hidden="true">×</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                    <input
+                      className="input"
+                      placeholder="담당자 검색 후 선택"
+                      value={contactQuery}
+                      onChange={(event) => setContactQuery(event.target.value)}
+                    />
+                    <div className="menu">
+                      {employees
+                        .filter((contact) => {
+                          const needle = contactQuery.trim()
+                          if (!needle) return true
+                          return `${contact.name} ${contact.position} ${contact.department}`.includes(needle)
+                        })
+                        .map((contact) => {
+                          const checked = draft.contactIds.includes(contact.id)
+                          const detail = [contact.position, contact.department].filter(Boolean).join(' · ')
+                          return (
+                            <button
+                              key={contact.id}
+                              type="button"
+                              className={checked ? 'on' : ''}
+                              aria-pressed={checked}
+                              onClick={() =>
+                                patch({
+                                  contactIds: checked
+                                    ? draft.contactIds.filter((id) => id !== contact.id)
+                                    : [...draft.contactIds, contact.id],
+                                })
+                              }
+                            >
+                              <span>
+                                {contact.name}
+                                {detail ? ` · ${detail}` : ''}
+                              </span>
+                              {checked && <span>선택됨</span>}
+                            </button>
+                          )
+                        })}
+                    </div>
                   </div>
                 )}
               </>
             )}
 
+            <span className="sec">관련 사업</span>
+            <select
+              className="input"
+              value={draft.businessId ?? ''}
+              onChange={(event) => {
+                const businessId = event.target.value || null
+                const linked = portfolio.businesses.find((item) => item.id === businessId)
+                patch({
+                  businessId,
+                  companyId: draft.companyId ?? linked?.companyId ?? null,
+                })
+              }}
+            >
+              <option value="">연결 안 함</option>
+              {[...portfolio.businesses]
+                .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+                .map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              {draft.businessId && !portfolio.businesses.some((item) => item.id === draft.businessId) && (
+                <option value={draft.businessId}>연결된 사업</option>
+              )}
+            </select>
+            <p className="hint">사업 연결은 선택입니다. 연결해도 영업 캘린더의 영업활동으로 남습니다.</p>
+
             <span className="sec">활동 목적</span>
             {purposes.length === 0 ? (
               <p className="hint">활동 유형을 선택하면 목적을 고를 수 있습니다.</p>
             ) : (
-              <div>
-                {purposes.map((purpose) => {
-                  const checked = draft.purpose === purpose.id
-                  return (
-                    <label key={purpose.id} className={checked ? 'choice on' : 'choice'}>
-                      <input
-                        type="radio"
-                        name="purpose"
-                        checked={checked}
-                        onChange={() => patch({ purpose: purpose.id })}
-                      />
-                      <span className="mark" aria-hidden="true" />
-                      <span>{purpose.label}</span>
-                    </label>
-                  )
-                })}
+              <div className="quick-picks" role="group" aria-label="활동 목적">
+                {purposes.map((purpose) => (
+                  <button
+                    key={purpose.id}
+                    type="button"
+                    className={draft.purpose === purpose.id ? 'quick-pick on' : 'quick-pick'}
+                    aria-pressed={draft.purpose === purpose.id}
+                    onClick={() => patch({ purpose: purpose.id })}
+                  >
+                    {purpose.label}
+                  </button>
+                ))}
               </div>
             )}
 
@@ -600,14 +671,19 @@ export function ActivityDialog({ request, onClose }: { request: DialogRequest; o
                 {blocker}
               </p>
             )}
-            <button type="submit" className="btn primary wide">
-              저장
-            </button>
-            {draft.editingId && (
-              <button type="button" className="text-btn danger foot-delete" onClick={remove}>
-                영업활동 삭제
+            <div className="foot-bar">
+              {draft.editingId && (
+                <button type="button" className="text-btn danger foot-delete" onClick={remove}>
+                  영업활동 삭제
+                </button>
+              )}
+              <button type="button" className="btn ghost" onClick={onClose}>
+                취소
               </button>
-            )}
+              <button type="submit" className="btn primary">
+                저장
+              </button>
+            </div>
           </footer>
         </form>
       </div>

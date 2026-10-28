@@ -7,6 +7,7 @@ const NAV: { id: string; label: string; route: Route; icon: ReactNode }[] = [
   { id: 'companies', label: '고객사', route: { name: 'companies' }, icon: <BuildingIcon /> },
   { id: 'contacts', label: '담당자', route: { name: 'contacts' }, icon: <PeopleIcon /> },
   { id: 'events', label: '행사', route: { name: 'events' }, icon: <FlagIcon /> },
+  { id: 'businesses', label: '사업', route: { name: 'businesses' }, icon: <BriefcaseIcon /> },
   { id: 'search', label: '검색', route: { name: 'search' }, icon: <SearchIcon /> },
 ]
 
@@ -146,6 +147,15 @@ function FlagIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M6 4v16M6 5h10l-2 3.5L16 12H6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function BriefcaseIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3" y="7" width="18" height="13" rx="2" fill="none" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7M3 12h18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
     </svg>
   )
 }

@@ -2,16 +2,20 @@ import { CURRENT_USER } from './session'
 import type { Activity, DB } from './types'
 
 function activity(
-  input: Omit<Activity, 'authorId' | 'updatedAt' | 'startTime' | 'endTime'> & {
+  input: Omit<Activity, 'authorId' | 'updatedAt' | 'startTime' | 'endTime' | 'businessId' | 'opinion'> & {
     startTime?: string | null
     endTime?: string | null
     updatedAt?: string
+    businessId?: string | null
+    opinion?: string
   },
 ): Activity {
   return {
     startTime: null,
     endTime: null,
     ...input,
+    businessId: input.businessId ?? null,
+    opinion: input.opinion ?? '',
     authorId: CURRENT_USER.id,
     updatedAt: input.updatedAt ?? input.createdAt,
   }

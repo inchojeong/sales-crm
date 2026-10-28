@@ -40,9 +40,11 @@ export interface Activity {
   companyId: string | null
   contactIds: string[]
   eventId: string | null
+  businessId: string | null
   purpose: string
   status: ActivityStatus
   notes: string
+  opinion: string
   startTime: string | null
   endTime: string | null
   authorId: string
@@ -96,10 +98,12 @@ export interface ActivityInput {
   companyId: string | null
   contactIds: string[]
   eventId: string | null
+  businessId?: string | null
   newEventName?: string
   purpose: string
   status: ActivityStatus
   notes: string
+  opinion?: string
   startTime?: string | null
   endTime?: string | null
   relatedActivityId: string | null
@@ -110,6 +114,7 @@ export interface CreatePrefill {
   companyId?: string | null
   contactIds?: string[]
   eventId?: string | null
+  businessId?: string | null
   type?: ActivityType
   startTime?: string
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ActivityDialog } from './components/ActivityDialog'
 import { CalendarScreen } from './components/CalendarScreen'
+import { BusinessDetail, BusinessList } from './components/BusinessScreens'
 import { CompanyDetail, CompanyList, ContactDetail, ContactList, EventDetail, EventList } from './components/RecordScreens'
 import { SearchScreen } from './components/SearchScreen'
 import { Shell } from './components/Shell'
@@ -9,7 +10,7 @@ import { UIContext, parseHash, routeToHash, type Route } from './ui'
 
 function dialogKey(dialog: DialogRequest) {
   if (dialog.mode === 'create') {
-    return `c-${dialog.date}-${dialog.companyId ?? ''}-${(dialog.contactIds ?? []).join(',')}-${dialog.eventId ?? ''}-${dialog.type ?? ''}-${dialog.startTime ?? ''}`
+    return `c-${dialog.date}-${dialog.companyId ?? ''}-${(dialog.contactIds ?? []).join(',')}-${dialog.eventId ?? ''}-${dialog.businessId ?? ''}-${dialog.type ?? ''}-${dialog.startTime ?? ''}`
   }
   return `${dialog.mode}-${dialog.activityId}`
 }
@@ -52,6 +53,8 @@ export function App() {
         {route.name === 'contact' && <ContactDetail key={route.id} id={route.id} />}
         {route.name === 'events' && <EventList />}
         {route.name === 'event' && <EventDetail key={route.id} id={route.id} />}
+        {route.name === 'businesses' && <BusinessList />}
+        {route.name === 'business' && <BusinessDetail key={route.id} id={route.id} />}
         {route.name === 'search' && <SearchScreen />}
       </Shell>
       {dialog && <ActivityDialog key={dialogKey(dialog)} request={dialog} onClose={() => setDialog(null)} />}

@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { isEventAttendance } from './attendance'
 import { SEED } from './seed'
 import { CURRENT_USER } from './session'
 import type {
@@ -30,6 +31,9 @@ interface CrmApi {
   saveContact: (input: ContactInput) => string
   saveEvent: (input: EventInput) => string
   deleteActivity: (id: string) => void
+  deleteEvent: (id: string) => void
+  releaseContact: (contactId: string) => void
+  releaseCompany: (companyId: string, contactIds: string[]) => void
   resetDemo: () => void
 }
 
@@ -53,7 +57,11 @@ function load(): DB {
       companies: parsed.companies,
       contacts: parsed.contacts,
       events: parsed.events,
-      activities: parsed.activities,
+      activities: parsed.activities.map((activity) => ({
+        ...activity,
+        businessId: activity.businessId ?? null,
+        opinion: activity.opinion ?? '',
+      })),
     }
   } catch {
     return structuredClone(SEED)
@@ -78,8 +86,12 @@ function applyActivity(prev: DB, input: ActivityInput): DB {
     eventId = created.id
   }
   const companyId = input.companyId
+  const ownerByContact = new Map(prev.contacts.map((contact) => [contact.id, contact.companyId]))
   const contactIds = companyId
-    ? input.contactIds.filter((id) => prev.contacts.some((contact) => contact.id === id && contact.companyId === companyId))
+    ? [...new Set(input.contactIds)].filter((id) => {
+        const owner = ownerByContact.get(id)
+        return owner === undefined || owner === companyId
+      })
     : []
   const existing = input.id ? prev.activities.find((item) => item.id === input.id) : undefined
   const next: Activity = {
@@ -90,9 +102,11 @@ function applyActivity(prev: DB, input: ActivityInput): DB {
     companyId,
     contactIds,
     eventId,
+    businessId: input.businessId ?? null,
     purpose: input.purpose,
     status: input.status,
     notes: input.notes.trim(),
+    opinion: input.opinion?.trim() ?? '',
     startTime: input.startTime || null,
     endTime: input.endTime || null,
     authorId: existing?.authorId ?? CURRENT_USER.id,
@@ -196,6 +210,51 @@ export function CrmProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
+  const deleteEvent = useCallback((id: string) => {
+    const now = new Date().toISOString()
+    setDb((prev) => ({
+      ...prev,
+      events: prev.events.filter((event) => event.id !== id),
+      activities: prev.activities.flatMap((activity) => {
+        if (activity.eventId !== id) return [activity]
+        if (isEventAttendance(activity)) return []
+        return [{ ...activity, eventId: null, updatedAt: now }]
+      }),
+    }))
+  }, [])
+
+  const releaseContact = useCallback((contactId: string) => {
+    const now = new Date().toISOString()
+    setDb((prev) => ({
+      ...prev,
+      contacts: prev.contacts.filter((contact) => contact.id !== contactId),
+      activities: prev.activities.flatMap((activity) => {
+        if (!activity.contactIds.includes(contactId)) return [activity]
+        const contactIds = activity.contactIds.filter((id) => id !== contactId)
+        if (isEventAttendance(activity) && contactIds.length === 0) return []
+        return [{ ...activity, contactIds, updatedAt: now }]
+      }),
+    }))
+  }, [])
+
+  const releaseCompany = useCallback((companyId: string, contactIds: string[]) => {
+    const dropping = new Set(contactIds)
+    const now = new Date().toISOString()
+    setDb((prev) => ({
+      ...prev,
+      companies: prev.companies.filter((company) => company.id !== companyId),
+      contacts: prev.contacts.filter((contact) => contact.companyId !== companyId && !dropping.has(contact.id)),
+      activities: prev.activities.flatMap((activity) => {
+        const nextContacts = activity.contactIds.filter((id) => !dropping.has(id))
+        const linked = activity.companyId === companyId
+        const touched = linked || nextContacts.length !== activity.contactIds.length
+        if (!touched) return [activity]
+        if (isEventAttendance(activity) && nextContacts.length === 0) return []
+        return [{ ...activity, companyId: linked ? null : activity.companyId, contactIds: nextContacts, updatedAt: now }]
+      }),
+    }))
+  }, [])
+
   const resetDemo = useCallback(() => {
     setDb(structuredClone(SEED))
   }, [])
@@ -212,9 +271,12 @@ export function CrmProvider({ children }: { children: ReactNode }) {
       saveContact,
       saveEvent,
       deleteActivity,
+      deleteEvent,
+      releaseContact,
+      releaseCompany,
       resetDemo,
     }),
-    [db, companyById, contactById, eventById, saveActivity, saveCompany, saveContact, saveEvent, deleteActivity, resetDemo],
+    [db, companyById, contactById, eventById, saveActivity, saveCompany, saveContact, saveEvent, deleteActivity, deleteEvent, releaseContact, releaseCompany, resetDemo],
   )
 
   return <CrmContext.Provider value={value}>{children}</CrmContext.Provider>

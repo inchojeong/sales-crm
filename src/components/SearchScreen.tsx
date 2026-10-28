@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { isEventAttendance } from '../attendance'
 import { Timeline } from './ActivityRow'
 import { useCrm } from '../store'
 import { STATUS_META, TYPE_META, TYPE_ORDER, purposeLabel } from '../templates'
@@ -23,6 +24,7 @@ export function SearchScreen() {
   const results = useMemo(() => {
     const needle = query.trim().toLowerCase()
     return db.activities.filter((activity) => {
+      if (isEventAttendance(activity)) return false
       if (type && activity.type !== type) return false
       if (status && activity.status !== status) return false
       if (companyId && activity.companyId !== companyId) return false
@@ -37,6 +39,7 @@ export function SearchScreen() {
       const haystack = [
         activity.title,
         activity.notes,
+        activity.opinion,
         company?.name,
         event?.name,
         TYPE_META[activity.type].label,
