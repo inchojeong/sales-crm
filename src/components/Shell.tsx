@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
+import { useAuth } from '../auth'
 import { supabase } from '../lib/supabase'
 import { useCrm } from '../store'
 import { sectionOf, useUI, type Route } from '../ui'
@@ -22,9 +23,11 @@ function readDismissed() {
 
 export function Shell({ children }: { children: ReactNode }) {
   const { route, go } = useUI()
+  const { signOut } = useAuth()
   const { resetDemo, currentUser, scheduleReady, scheduleError } = useCrm()
   const shared = Boolean(supabase)
   const [hidden, setHidden] = useState(readDismissed)
+  const [leaving, setLeaving] = useState(false)
   const [query, setQuery] = useState(route.name === 'search' ? route.q ?? '' : '')
   const active = sectionOf(route)
 
@@ -41,6 +44,15 @@ export function Shell({ children }: { children: ReactNode }) {
     if (!window.confirm('예시 데이터로 되돌리면 현재 저장된 기록이 삭제됩니다. 계속할까요?')) return
     resetDemo()
     go({ name: 'calendar' })
+  }
+
+  async function logout() {
+    setLeaving(true)
+    try {
+      await signOut()
+    } finally {
+      setLeaving(false)
+    }
   }
 
   function search(event: FormEvent) {
@@ -100,6 +112,11 @@ export function Shell({ children }: { children: ReactNode }) {
               </span>
               <span className="who-name">{currentUser.name}</span>
             </div>
+            {shared && (
+              <button type="button" className="btn ghost logout" onClick={() => void logout()} disabled={leaving}>
+                {leaving ? '로그아웃 중' : '로그아웃'}
+              </button>
+            )}
           </header>
           <div className="workspace-body">
             {!shared && !hidden && (

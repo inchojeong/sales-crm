@@ -211,6 +211,8 @@ a { color: #1d4ed8; }
 
 .who-name { font-size: 13px; font-weight: 600; white-space: nowrap; }
 
+.logout { height: 36px; padding: 0 12px; color: #3e4654; white-space: nowrap; }
+
 .banner {
   display: flex;
   justify-content: space-between;

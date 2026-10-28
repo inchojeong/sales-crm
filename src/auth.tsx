@@ -4,6 +4,7 @@ import { supabase, supabaseConfigured, type Profile } from './lib/supabase'
 interface AuthState {
   ready: boolean
   profile: Profile | null
+  signOut: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthState | null>(null)
@@ -82,6 +83,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  async function signOut() {
+    if (!supabase) return
+    await supabase.auth.signOut({ scope: 'local' })
+  }
+
   async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!supabase) return
@@ -109,7 +115,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   }
 
   if (!supabaseConfigured) {
-    return <AuthContext.Provider value={{ ready: true, profile: null }}>{children}</AuthContext.Provider>
+    return <AuthContext.Provider value={{ ready: true, profile: null, signOut }}>{children}</AuthContext.Provider>
   }
 
   if (!ready) {
@@ -149,5 +155,5 @@ export function AuthGate({ children }: { children: ReactNode }) {
     )
   }
 
-  return <AuthContext.Provider value={{ ready: true, profile }}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={{ ready: true, profile, signOut }}>{children}</AuthContext.Provider>
 }
