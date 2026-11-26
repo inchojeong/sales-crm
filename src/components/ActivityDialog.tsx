@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useBusiness } from '../business'
-import { addDays, defaultStatus, formatFullDate, todayKey } from '../dates'
+import { addDays, defaultStatus, formatFullDate, plusHour, todayKey } from '../dates'
 import { useDirectory } from '../directory'
+import { useRecordSource } from '../records'
+import { lastContactIds, splitPersonText } from '../smart'
 import { useCrm } from '../store'
 import { PURPOSES, STATUS_META, TYPE_META, TYPE_ORDER, autoTitle, purposeLabel } from '../templates'
 import type { Activity, ActivityStatus, ActivityType, DialogRequest } from '../types'
@@ -28,12 +30,6 @@ interface Draft {
   newEventName: string
   relatedActivityId: string | null
   showMore: boolean
-}
-
-function plusHour(value: string) {
-  const [hour, minute] = value.split(':').map(Number)
-  const total = hour * 60 + minute + 60
-  return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
 }
 
 function blank(date: string): Draft {
@@ -137,6 +133,9 @@ export function ActivityDialog({ request, onClose }: { request: DialogRequest; o
   const [companyQuery, setCompanyQuery] = useState('')
   const [contactQuery, setContactQuery] = useState('')
   const [tried, setTried] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState('')
+  const records = useRecordSource()
   const panelRef = useRef<HTMLDivElement>(null)
   const companyRef = useRef<HTMLDivElement>(null)
 
@@ -229,6 +228,53 @@ export function ActivityDialog({ request, onClose }: { request: DialogRequest; o
   function patch(partial: Partial<Draft>) {
     setDraft((current) => ({ ...current, ...partial }))
     setTried(false)
+  }
+
+  function smartContacts(companyId: string) {
+    if (request.mode !== 'create') return []
+    const owned = new Set(records.contacts.filter((item) => item.companyId === companyId).map((item) => item.id))
+    return lastContactIds(companyId, db.activities, owned)
+  }
+
+  async function createCompany(name: string) {
+    setCreating(true)
+    setCreateError('')
+    try {
+      const id = await records.saveCompany({ name, industry: '', website: '', phone: '', address: '', summary: '' })
+      patch({ companyId: id, contactIds: [] })
+      setCompanyOpen(false)
+      setCompanyQuery('')
+      setContactQuery('')
+    } catch (error) {
+      setCreateError(error instanceof Error ? error.message : '등록하지 못했습니다. 잠시 후 다시 시도해 주세요.')
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  async function createContact(text: string) {
+    if (!draft.companyId) return
+    const person = splitPersonText(text)
+    if (!person.name) return
+    setCreating(true)
+    setCreateError('')
+    try {
+      const id = await records.saveContact({
+        companyId: draft.companyId,
+        name: person.name,
+        department: '',
+        position: person.position,
+        email: '',
+        phone: '',
+        memo: '',
+      })
+      patch({ contactIds: [...draft.contactIds, id] })
+      setContactQuery('')
+    } catch (error) {
+      setCreateError(error instanceof Error ? error.message : '등록하지 못했습니다. 잠시 후 다시 시도해 주세요.')
+    } finally {
+      setCreating(false)
+    }
   }
 
   function changeDate(date: string) {
@@ -440,7 +486,7 @@ export function ActivityDialog({ request, onClose }: { request: DialogRequest; o
                       onClick={() => {
                       patch({
                         companyId: item.id,
-                        contactIds: item.id === draft.companyId ? draft.contactIds : [],
+                        contactIds: item.id === draft.companyId ? draft.contactIds : smartContacts(item.id),
                       })
                       setCompanyOpen(false)
                       setCompanyQuery('')
@@ -452,6 +498,17 @@ export function ActivityDialog({ request, onClose }: { request: DialogRequest; o
                     </button>
                   ))}
                   {companies.length === 0 && <p className="empty option-empty">해당하는 고객사가 없습니다.</p>}
+                  {companyQuery.trim() && !companyOptions.some((item) => item.name === companyQuery.trim()) && (
+                    <button
+                      type="button"
+                      className="option create"
+                      disabled={creating}
+                      onClick={() => void createCompany(companyQuery.trim())}
+                    >
+                      ‘{companyQuery.trim()}’ 새 고객사로 등록
+                    </button>
+                  )}
+                  {createError && <p className="error option-empty">{createError}</p>}
                 </div>
               )}
             </div>
@@ -459,9 +516,10 @@ export function ActivityDialog({ request, onClose }: { request: DialogRequest; o
             {draft.companyId && (
               <>
                 <span className="sec">담당자</span>
-                {employees.length === 0 ? (
-                  <p className="hint">등록된 담당자가 없습니다. 담당자 없이도 저장할 수 있습니다.</p>
-                ) : (
+                {employees.length === 0 && (
+                  <p className="hint">등록된 담당자가 없습니다. 이름을 입력해 바로 등록하거나, 담당자 없이 저장할 수 있습니다.</p>
+                )}
+                {(
                   <div>
                     {draft.contactIds.length > 0 && (
                       <div className="tokens">
@@ -484,7 +542,7 @@ export function ActivityDialog({ request, onClose }: { request: DialogRequest; o
                     )}
                     <input
                       className="input"
-                      placeholder="담당자 검색 후 선택"
+                      placeholder="담당자 검색 또는 새 이름 입력 (예: 이성웅 책임)"
                       value={contactQuery}
                       onChange={(event) => setContactQuery(event.target.value)}
                     />
@@ -520,7 +578,19 @@ export function ActivityDialog({ request, onClose }: { request: DialogRequest; o
                             </button>
                           )
                         })}
+                      {contactQuery.trim() &&
+                        !employees.some((contact) => contact.name === splitPersonText(contactQuery).name) && (
+                          <button
+                            type="button"
+                            className="create"
+                            disabled={creating}
+                            onClick={() => void createContact(contactQuery)}
+                          >
+                            <span>‘{contactQuery.trim()}’ 새 담당자로 등록</span>
+                          </button>
+                        )}
                     </div>
+                    {createError && <p className="error">{createError}</p>}
                   </div>
                 )}
               </>

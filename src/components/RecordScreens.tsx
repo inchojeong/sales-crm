@@ -2,6 +2,8 @@ import { useState, type ReactNode } from 'react'
 import { isEventAttendance } from '../attendance'
 import { useBusiness } from '../business'
 import { RelationTimeline, Timeline } from './ActivityRow'
+import { BulkImport } from './BulkImport'
+import { CompanyGrid, ContactGrid } from './RecordGrids'
 import { RelatedBusinesses } from './BusinessScreens'
 import { formatDayTitle, formatFullDate, todayKey, defaultStatus } from '../dates'
 import { useDirectory } from '../directory'
@@ -52,6 +54,8 @@ export function CompanyList() {
   const directory = useDirectory()
   const { go } = useUI()
   const [open, setOpen] = useState(false)
+  const [grid, setGrid] = useState(false)
+  const [importing, setImporting] = useState(false)
   const [form, setForm] = useState<CompanyInput>(blankCompany)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -85,10 +89,19 @@ export function CompanyList() {
           <h1>고객사</h1>
           <p className="page-intro">고객사별 담당자를 등록하고 관리할 수 있습니다.</p>
         </div>
-        <button type="button" className="btn primary" onClick={() => setOpen((value) => !value)}>
-          {open ? '닫기' : '+ 고객사 등록'}
-        </button>
+        <div className="list-actions">
+          <button type="button" className="btn ghost" aria-pressed={grid} onClick={() => setGrid((value) => !value)}>
+            {grid ? '카드로 보기' : '표로 편집'}
+          </button>
+          <button type="button" className="btn ghost" onClick={() => setImporting(true)}>
+            붙여넣기 등록
+          </button>
+          <button type="button" className="btn primary" onClick={() => setOpen((value) => !value)}>
+            {open ? '닫기' : '+ 고객사 등록'}
+          </button>
+        </div>
       </div>
+      {importing && <BulkImport initialKind="companies" onClose={() => setImporting(false)} />}
       {open && (
         <div className="card pad form-card">
           <div className="form-grid">
@@ -120,6 +133,8 @@ export function CompanyList() {
       {remote && directory.error && <p className="error">{directory.error}</p>}
       {remote && !directory.ready ? (
         <p className="empty">고객사 정보를 불러오고 있습니다.</p>
+      ) : grid ? (
+        <CompanyGrid />
       ) : (
       <div className="entity-list">
         {companies.map((company) => {
@@ -455,6 +470,8 @@ export function ContactList() {
   const remote = directory.remote
   const contacts = [...(remote ? directory.contacts : db.contacts)].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
   const companies = remote ? directory.companies : db.companies
+  const [grid, setGrid] = useState(false)
+  const [importing, setImporting] = useState(false)
   return (
     <section>
       <div className="page-head">
@@ -462,10 +479,21 @@ export function ContactList() {
           <h1>담당자</h1>
           <p className="page-intro">담당자별 영업활동 이력을 확인할 수 있습니다.</p>
         </div>
+        <div className="list-actions">
+          <button type="button" className="btn ghost" aria-pressed={grid} onClick={() => setGrid((value) => !value)}>
+            {grid ? '카드로 보기' : '표로 편집'}
+          </button>
+          <button type="button" className="btn primary" onClick={() => setImporting(true)}>
+            붙여넣기 등록
+          </button>
+        </div>
       </div>
+      {importing && <BulkImport initialKind="contacts" onClose={() => setImporting(false)} />}
       {remote && directory.error && <p className="error">{directory.error}</p>}
       {remote && !directory.ready ? (
         <p className="empty">담당자 정보를 불러오고 있습니다.</p>
+      ) : grid ? (
+        <ContactGrid />
       ) : (
       <div className="entity-list">
         {contacts.map((contact) => {

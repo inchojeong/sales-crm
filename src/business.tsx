@@ -1,8 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { supabase } from './lib/supabase'
-import { importProvidedBusinesses } from './providedBusinesses'
-
-let notifiedDirectory = false
 
 const LOAD_ERROR = '사업 정보를 불러오지 못했습니다.'
 const SAVE_ERROR = '저장하지 못했습니다. 잠시 후 다시 시도해 주세요.'
@@ -208,20 +205,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
       setReady(true)
       return
     }
-    let businessRows = (businessResult.data ?? []) as BusinessRow[]
-    try {
-      const added = await importProvidedBusinesses(supabase)
-      if (added) {
-        const again = await supabase.from('businesses').select(BUSINESS_COLUMNS)
-        if (!again.error) businessRows = (again.data ?? []) as BusinessRow[]
-        if (!notifiedDirectory) {
-          notifiedDirectory = true
-          window.dispatchEvent(new Event('focus'))
-        }
-      }
-    } catch {
-      /* 화면의 기존 사업 조회는 유지하고, 다음 조회에서 등록을 다시 시도합니다. */
-    }
+    const businessRows = (businessResult.data ?? []) as BusinessRow[]
     const targets = groupLinks((targetResult.data ?? []) as LinkRow[])
     const stakeholders = groupLinks((stakeholderResult.data ?? []) as LinkRow[])
     setBusinesses(businessRows.map((row) => toBusiness(row, targets, stakeholders)))

@@ -77,6 +77,12 @@ export function weekdayIndex(key: string) {
 
 export const WEEKDAY_LABELS = WEEKDAYS
 
+export function plusHour(value: string) {
+  const [hour, minute] = value.split(':').map(Number)
+  const total = hour * 60 + minute + 60
+  return `${pad(Math.floor(total / 60) % 24)}:${pad(total % 60)}`
+}
+
 export function defaultStatus(date: string, today = todayKey()) {
   return date > today ? 'planned' : 'done'
 }

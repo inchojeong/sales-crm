@@ -1,8 +1,14 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { useAuth } from '../auth'
 import { supabase } from '../lib/supabase'
 import { useCrm } from '../store'
 import { sectionOf, useUI, type Route } from '../ui'
+import { QuickCapture } from './QuickCapture'
+
+function isTyping(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false
+  return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
+}
 
 const NAV: { id: string; label: string; route: Route; icon: ReactNode }[] = [
   { id: 'calendar', label: '캘린더', route: { name: 'calendar' }, icon: <CalendarIcon /> },
@@ -29,7 +35,26 @@ export function Shell({ children }: { children: ReactNode }) {
   const [hidden, setHidden] = useState(readDismissed)
   const [leaving, setLeaving] = useState(false)
   const [query, setQuery] = useState(route.name === 'search' ? route.q ?? '' : '')
+  const [quick, setQuick] = useState(false)
   const active = sectionOf(route)
+  const ready = !shared || scheduleReady
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        if (ready) setQuick((value) => !value)
+        return
+      }
+      if (event.key === '/' && ready && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        if (isTyping(event.target) || document.querySelector('.backdrop')) return
+        event.preventDefault()
+        setQuick(true)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [ready])
 
   function dismiss() {
     try {
@@ -106,6 +131,10 @@ export function Shell({ children }: { children: ReactNode }) {
                 aria-label="검색"
               />
             </form>
+            <button type="button" className="quick-open" onClick={() => setQuick(true)} disabled={!ready}>
+              <span>빠른 입력</span>
+              <kbd>Ctrl K</kbd>
+            </button>
             <div className="who">
               <span className="avatar" aria-hidden="true">
                 {currentUser.name.slice(0, 1)}
@@ -132,6 +161,7 @@ export function Shell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </div>
+      {quick && ready && <QuickCapture onClose={() => setQuick(false)} />}
     </div>
   )
 }
