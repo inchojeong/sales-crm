@@ -11,6 +11,7 @@ import { useCrm } from '../store'
 import type { Activity, Company, CompanyInput, Contact, ContactInput, EventInput } from '../types'
 import { autoTitle } from '../templates'
 import { useUI } from '../ui'
+import { markTone } from './HubScreens'
 
 const blankCompany: CompanyInput = {
   name: '',
@@ -182,10 +183,11 @@ function CompanyBrowse({
         <table className="table">
           <thead>
             <tr>
-              <th>고객사</th>
-              <th>관계</th>
+              <th>기업</th>
+              <th>분류</th>
+              <th>사업 이력</th>
+              <th>최근 접점</th>
               <th>담당자</th>
-              <th>최근 활동</th>
             </tr>
           </thead>
           <tbody>
@@ -205,39 +207,56 @@ function CompanyBrowse({
                     }
                   }}
                 >
-                  <td><b>{company.name}</b>{company.needsReview ? <em className="token warn">검토</em> : null}</td>
-                  <td>{company.relation || company.industry || '—'}</td>
+                  <td>
+                    <span className="co">
+                      <span className="logo" style={{ background: markTone(company.name).bg, color: markTone(company.name).fg }}>{company.name.slice(0, 1)}</span>
+                      <span><b>{company.name}</b><small>{company.industry || '업종 미입력'}</small></span>
+                    </span>
+                  </td>
+                  <td>{company.needsReview ? <em className="badge b-warn">검토</em> : <em className="badge b-run">{company.relation || '고객'}</em>}</td>
+                  <td>{businesses.filter((item) => item.companyId === company.id).length}건</td>
+                  <td className="muted">{last ? formatDayTitle(last) : '없음'}</td>
                   <td>{count}</td>
-                  <td>{last ? formatDayTitle(last) : '없음'}</td>
                 </tr>
               )
             })}
           </tbody>
         </table>
       </div>
-      <aside className="drawer">
+      <aside className="card drawer">
         <div className="drawer-h">
+          <div className="drawer-top">
+            <span className="logo lg" style={{ background: markTone(selected.name).bg, color: markTone(selected.name).fg }}>{selected.name.slice(0, 1)}</span>
+            <button type="button" className="btn primary sm" onClick={() => go({ name: 'company', id: selected.id })}>전체 보기</button>
+          </div>
           <h2>{selected.name}</h2>
-          <button type="button" className="btn primary" onClick={() => go({ name: 'company', id: selected.id })}>전체 보기</button>
+          <p className="drawer-meta">{[selected.industry, selected.relation, latest ? `최근 ${formatDayTitle(latest)}` : '영업활동 없음'].filter(Boolean).join(' · ')}</p>
+          {selected.needsReview && <em className="badge b-warn">검토 필요</em>}
         </div>
-        <p className="drawer-meta">{[selected.relation, selected.industry, latest ? `최근 ${formatDayTitle(latest)}` : '영업활동 없음'].filter(Boolean).join(' · ')}</p>
-        {selected.reviewNote && <p className="hint">{selected.reviewNote}</p>}
-        <h3>사업 이력</h3>
-        {history.length === 0 && <p className="empty">연결된 사업이 없습니다.</p>}
-        {history.slice(0, 4).map((item) => (
-          <button key={item.id} type="button" className="hub-row" onClick={() => go({ name: 'business', id: item.id })}>
-            <b>{item.name}</b>
-            <span>{[item.fiscalYear, businessOutcomeLabel(item.outcome)].filter(Boolean).join(' · ')}</span>
-          </button>
-        ))}
-        <h3>담당자</h3>
-        {people.length === 0 && <p className="empty">등록된 담당자가 없습니다.</p>}
-        {people.slice(0, 4).map((contact) => (
-          <button key={contact.id} type="button" className="hub-row" onClick={() => go({ name: 'contact', id: contact.id })}>
-            <b>{contact.name}</b>
-            <span>{contact.position || contact.email || '담당자'}</span>
-          </button>
-        ))}
+        <div className="mini3">
+          <div><b>{history.length}</b><span>사업 이력</span></div>
+          <div><b>{people.length}</b><span>담당자</span></div>
+          <div><b>{activities.filter((item) => item.companyId === selected.id).length}</b><span>활동</span></div>
+        </div>
+        <div className="card-b">
+          {selected.reviewNote && <p className="hint">{selected.reviewNote}</p>}
+          <p className="sec-t">사업 이력</p>
+          {history.length === 0 && <p className="empty">연결된 사업이 없습니다.</p>}
+          {history.slice(0, 4).map((item) => (
+            <button key={item.id} type="button" className="hist" onClick={() => go({ name: 'business', id: item.id })}>
+              <span><b>{item.name}</b><span>{[item.fiscalYear, item.program].filter(Boolean).join(' · ') || '사업'}</span></span>
+              <em className="badge b-off">{businessOutcomeLabel(item.outcome)}</em>
+            </button>
+          ))}
+          <p className="sec-t">담당자</p>
+          {people.length === 0 && <p className="empty">등록된 담당자가 없습니다.</p>}
+          {people.slice(0, 4).map((contact) => (
+            <button key={contact.id} type="button" className="hist" onClick={() => go({ name: 'contact', id: contact.id })}>
+              <span className="logo" style={{ background: markTone(contact.name).bg, color: markTone(contact.name).fg }}>{contact.name.slice(0, 1)}</span>
+              <span><b>{contact.name}</b><span>{contact.position || contact.email || '담당자'}</span></span>
+            </button>
+          ))}
+        </div>
       </aside>
     </div>
   )

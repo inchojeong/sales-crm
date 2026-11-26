@@ -25,13 +25,13 @@ const HOUR_PX = 96
 const DAY_START = 9 * 60
 const DAY_END = 18 * 60
 
-const CARD_TONE: Record<ActivityType, { bg: string; fg: string }> = {
-  meeting: { bg: '#d3f1ec', fg: '#0b5a51' },
-  email: { bg: '#e5f3b8', fg: '#41590a' },
-  proposal: { bg: '#edf5cf', fg: '#4a6a00' },
-  call: { bg: '#f8e8bd', fg: '#6b4a00' },
-  event: { bg: '#e2e4f5', fg: '#343b80' },
-  other: { bg: '#dde2df', fg: '#4f5a57' },
+const CARD_TONE: Record<ActivityType, { bg: string; fg: string; edge: string }> = {
+  meeting: { bg: '#d3f1ec', fg: '#0b5a51', edge: '#3fcfbd' },
+  email: { bg: '#e5f3b8', fg: '#41590a', edge: '#bfe83a' },
+  proposal: { bg: '#f8e8bd', fg: '#6b4a00', edge: '#f0b429' },
+  call: { bg: '#f8e8bd', fg: '#6b4a00', edge: '#f0b429' },
+  event: { bg: '#e2e4f5', fg: '#343b80', edge: '#7d86d9' },
+  other: { bg: '#dde2df', fg: '#4f5a57', edge: '#8a9490' },
 }
 
 function minutesOf(value: string) {
@@ -139,8 +139,19 @@ export function CalendarScreen() {
   return (
     <section className="cal-screen">
       <div className="cal-title-row">
-        <h1>캘린더</h1>
+        <div>
+          <h1>활동</h1>
+          <p className="page-intro">행사 · 미팅 · 마감 · 후속 연락을 한 달력에서 봅니다.</p>
+        </div>
         <div className="cal-actions">
+          <div className="legend">
+            {TYPE_ORDER.map((type) => (
+              <span key={type}>
+                <i className="swatch" style={{ background: CARD_TONE[type].edge }} />
+                {TYPE_META[type].label}
+              </span>
+            ))}
+          </div>
           <button type="button" className="pill" onClick={() => setSelected(today)}>
             오늘
           </button>
@@ -203,7 +214,7 @@ export function CalendarScreen() {
       </div>
 
       {mode === 'month' ? (
-        <>
+        <div className="month-board">
           <div className="dows">
             {WEEKDAY_LABELS.map((label) => (
               <div key={label} className={label === '일' ? 'dow sun' : 'dow'}>
@@ -243,7 +254,7 @@ export function CalendarScreen() {
                         key={eventItem.id}
                         type="button"
                         className="month-pill"
-                        style={{ background: CARD_TONE.event.bg, color: CARD_TONE.event.fg }}
+                        style={{ background: CARD_TONE.event.bg, color: CARD_TONE.event.fg, borderLeft: `3px solid ${CARD_TONE.event.edge}` }}
                         onClick={(click) => {
                           click.stopPropagation()
                           setSelected(date)
@@ -258,7 +269,7 @@ export function CalendarScreen() {
                         key={activity.id}
                         type="button"
                         className="month-pill"
-                        style={{ background: CARD_TONE[activity.type].bg, color: CARD_TONE[activity.type].fg }}
+                        style={{ background: CARD_TONE[activity.type].bg, color: CARD_TONE[activity.type].fg, borderLeft: `3px solid ${CARD_TONE[activity.type].edge}` }}
                         onClick={(click) => {
                           click.stopPropagation()
                           setSelected(date)
@@ -274,7 +285,7 @@ export function CalendarScreen() {
               )
             })}
           </div>
-        </>
+        </div>
       ) : (
         <WeekBoard
           days={weekDays}
@@ -296,15 +307,6 @@ export function CalendarScreen() {
           }}
         />
       )}
-
-      <div className="legend">
-        {TYPE_ORDER.map((type) => (
-          <span key={type}>
-            <i className="swatch" style={{ background: CARD_TONE[type].bg, boxShadow: `inset 0 0 0 1px ${CARD_TONE[type].fg}22` }} />
-            {TYPE_META[type].label}
-          </span>
-        ))}
-      </div>
 
       <div className="day-panel">
         <div className="day-panel-head">
@@ -397,7 +399,7 @@ function WeekBoard({
                         key={eventItem.id}
                         type="button"
                         className="event-card compact"
-                        style={{ background: CARD_TONE.event.bg, color: CARD_TONE.event.fg }}
+                        style={{ background: CARD_TONE.event.bg, color: CARD_TONE.event.fg, borderLeft: `3px solid ${CARD_TONE.event.edge}` }}
                         onClick={() => onOpenEvent(eventItem.id, date)}
                       >
                         {eventItem.name}
@@ -408,7 +410,7 @@ function WeekBoard({
                         key={activity.id}
                         type="button"
                         className="event-card compact"
-                        style={{ background: CARD_TONE[activity.type].bg, color: CARD_TONE[activity.type].fg }}
+                        style={{ background: CARD_TONE[activity.type].bg, color: CARD_TONE[activity.type].fg, borderLeft: `3px solid ${CARD_TONE[activity.type].edge}` }}
                         onClick={() => onOpen(activity.id, date)}
                       >
                         {activity.status === 'postponed' ? `연기 · ${activity.title}` : activity.title}
@@ -442,6 +444,7 @@ function WeekBoard({
                           height,
                           background: CARD_TONE[activity.type].bg,
                           color: CARD_TONE[activity.type].fg,
+                          borderLeft: `3px solid ${CARD_TONE[activity.type].edge}`,
                         }}
                         onClick={() => onOpen(activity.id, date)}
                       >

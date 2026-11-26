@@ -107,9 +107,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <div className="app-frame">
         <aside className="sidebar">
           <button type="button" className="brand" onClick={() => go({ name: 'dashboard' })}>
-            <span className="brand-mark" aria-hidden="true">
-              <CalendarIcon />
-            </span>
+            <span className="brand-mark" aria-hidden="true">T</span>
             <span>
               <strong>Business Hub</strong>
               <small>TBELL 사업전략팀</small>
