@@ -1,10 +1,12 @@
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { RelationTimeline } from './ActivityRow'
 import {
+  BUSINESS_OUTCOMES,
   BUSINESS_STATUSES,
   BUSINESS_TYPES,
   MILESTONE_KINDS,
   MILESTONE_STATUSES,
+  businessOutcomeLabel,
   businessStatusLabel,
   businessTypeLabel,
   milestoneKindLabel,
@@ -81,6 +83,18 @@ function toInput(record: BusinessRecord): BusinessInput {
     companyId: record.companyId,
     targetContactIds: [...record.targetContactIds],
     stakeholderIds: [...record.stakeholderIds],
+    program: record.program,
+    item: record.item,
+    fiscalYear: record.fiscalYear,
+    outcome: record.outcome,
+    myRole: record.myRole,
+    evidence: record.evidence,
+    reviewNote: record.reviewNote,
+    needsReview: record.needsReview,
+    amount: record.amount,
+    matchingRoute: record.matchingRoute,
+    lessons: record.lessons,
+    source: record.source,
   }
 }
 
@@ -200,6 +214,33 @@ function BusinessForm({
           </Field>
           <Field label="개요" wide>
             <textarea className="textarea" value={form.overview} onChange={(event) => setForm({ ...form, overview: event.target.value })} />
+          </Field>
+          <Field label="관련 사업">
+            <input className="input" value={form.program ?? ''} onChange={(event) => setForm({ ...form, program: event.target.value })} />
+          </Field>
+          <Field label="사업연도">
+            <input className="input" value={form.fiscalYear ?? ''} onChange={(event) => setForm({ ...form, fiscalYear: event.target.value })} />
+          </Field>
+          <Field label="아이템·역할" wide>
+            <input className="input" value={form.item ?? ''} onChange={(event) => setForm({ ...form, item: event.target.value })} />
+          </Field>
+          <Field label="결과">
+            <select className="input" value={form.outcome ?? 'unknown'} onChange={(event) => setForm({ ...form, outcome: event.target.value as BusinessInput['outcome'] })}>
+              {BUSINESS_OUTCOMES.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="사업비·계약금액">
+            <input className="input" value={form.amount ?? ''} onChange={(event) => setForm({ ...form, amount: event.target.value })} />
+          </Field>
+          <Field label="근거자료" wide>
+            <input className="input" value={form.evidence ?? ''} onChange={(event) => setForm({ ...form, evidence: event.target.value })} />
+          </Field>
+          <Field label="검토 메모" wide>
+            <textarea className="textarea" value={form.reviewNote ?? ''} onChange={(event) => setForm({ ...form, reviewNote: event.target.value })} />
           </Field>
         </div>
       </div>
@@ -853,6 +894,34 @@ export function BusinessDetail({ id }: { id: string }) {
                       {shortDate(record.startDate)} – {shortDate(record.endDate)}
                     </dd>
                   </div>
+                  <div>
+                    <dt>관련 사업</dt>
+                    <dd>{record.program || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>결과</dt>
+                    <dd>{businessOutcomeLabel(record.outcome)}</dd>
+                  </div>
+                  <div className="wide">
+                    <dt>아이템·역할</dt>
+                    <dd>{record.item || '—'}</dd>
+                  </div>
+                  <div className="wide">
+                    <dt>근거자료</dt>
+                    <dd>{record.evidence || '—'}</dd>
+                  </div>
+                  {record.lessons && (
+                    <div className="wide">
+                      <dt>후속 제안</dt>
+                      <dd>{record.lessons}</dd>
+                    </div>
+                  )}
+                  {record.reviewNote && (
+                    <div className="wide">
+                      <dt>검토 메모</dt>
+                      <dd>{record.reviewNote}</dd>
+                    </div>
+                  )}
                 </dl>
                 <h2 className="stack-top">대상 담당자</h2>
                 {targets.length === 0 && <p className="empty">선택된 대상 담당자가 없습니다.</p>}

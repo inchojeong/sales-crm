@@ -3,6 +3,7 @@ import { ActivityDialog } from './components/ActivityDialog'
 import { CalendarScreen } from './components/CalendarScreen'
 import { BusinessDetail, BusinessList } from './components/BusinessScreens'
 import { CompanyDetail, CompanyList, ContactDetail, ContactList, EventDetail, EventList } from './components/RecordScreens'
+import { PortfolioImport } from './components/PortfolioImport'
 import { SearchScreen } from './components/SearchScreen'
 import { Shell } from './components/Shell'
 import type { CreatePrefill, DialogRequest } from './types'
@@ -56,6 +57,7 @@ export function App() {
         {route.name === 'businesses' && <BusinessList />}
         {route.name === 'business' && <BusinessDetail key={route.id} id={route.id} />}
         {route.name === 'search' && <SearchScreen />}
+        {route.name === 'import' && <PortfolioImport />}
       </Shell>
       {dialog && <ActivityDialog key={dialogKey(dialog)} request={dialog} onClose={() => setDialog(null)} />}
     </UIContext.Provider>

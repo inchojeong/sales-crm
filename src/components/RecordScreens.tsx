@@ -93,6 +93,9 @@ export function CompanyList() {
           <button type="button" className="btn ghost" aria-pressed={grid} onClick={() => setGrid((value) => !value)}>
             {grid ? '카드로 보기' : '표로 편집'}
           </button>
+          <button type="button" className="btn ghost" onClick={() => go({ name: 'import' })}>
+            엑셀 이관
+          </button>
           <button type="button" className="btn ghost" onClick={() => setImporting(true)}>
             붙여넣기 등록
           </button>
@@ -191,6 +194,13 @@ export function CompanyDetail({ id }: { id: string }) {
       phone: company.phone,
       address: company.address,
       summary: company.summary,
+      relation: company.relation ?? '',
+      reviewNote: company.reviewNote ?? '',
+      needsReview: company.needsReview ?? false,
+      priority: company.priority ?? '',
+      businessNo: company.businessNo ?? '',
+      lastContact: company.lastContact ?? null,
+      source: company.source ?? '',
     })
     setEditing(true)
     setError('')
@@ -422,6 +432,18 @@ export function CompanyDetail({ id }: { id: string }) {
                   <dt>소개</dt>
                   <dd>{company.summary || '—'}</dd>
                 </div>
+                <div>
+                  <dt>관계 구분</dt>
+                  <dd>{company.relation || '—'}</dd>
+                </div>
+                <div>
+                  <dt>우선순위</dt>
+                  <dd>{company.priority || '—'}</dd>
+                </div>
+                <div className="wide">
+                  <dt>검토 메모</dt>
+                  <dd>{company.reviewNote || '—'}</dd>
+                </div>
               </dl>
             ) : (
               <div className="form-card inner">
@@ -443,6 +465,15 @@ export function CompanyDetail({ id }: { id: string }) {
                   </Field>
                   <Field label="소개" wide>
                     <textarea className="textarea" value={form.summary} onChange={(event) => setForm({ ...form, summary: event.target.value })} />
+                  </Field>
+                  <Field label="관계 구분">
+                    <input className="input" value={form.relation ?? ''} onChange={(event) => setForm({ ...form, relation: event.target.value })} />
+                  </Field>
+                  <Field label="우선순위">
+                    <input className="input" value={form.priority ?? ''} onChange={(event) => setForm({ ...form, priority: event.target.value })} />
+                  </Field>
+                  <Field label="검토 메모" wide>
+                    <textarea className="textarea" value={form.reviewNote ?? ''} onChange={(event) => setForm({ ...form, reviewNote: event.target.value })} />
                   </Field>
                 </div>
                 {error && <p className="error">{error}</p>}

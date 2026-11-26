@@ -1725,6 +1725,10 @@ select.input {
 .grid-input.saved { background: var(--ok-soft); }
 .grid-input.error { background: var(--bad-soft); }
 .grid-hint { padding: 8px 12px; }
+.file-btn { position: relative; overflow: hidden; }
+.file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.portfolio-table { max-height: none; }
+.portfolio-table .grid-input { min-width: 120px; }
 
 @media (max-width: 760px) {
   .quick-open span { display: none; }

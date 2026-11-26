@@ -12,6 +12,7 @@ export type Route =
   | { name: 'businesses' }
   | { name: 'business'; id: string }
   | { name: 'search'; q?: string }
+  | { name: 'import' }
 
 interface UI {
   route: Route
@@ -44,6 +45,7 @@ export function parseHash(hash: string): Route {
   if (parts[0] === 'businesses' && parts[1]) return { name: 'business', id: decodeURIComponent(parts[1]) }
   if (parts[0] === 'businesses') return { name: 'businesses' }
   if (parts[0] === 'search') return { name: 'search', q: params.get('q') ?? '' }
+  if (parts[0] === 'import') return { name: 'import' }
   return { name: 'calendar' }
 }
 
@@ -69,6 +71,8 @@ export function routeToHash(route: Route) {
       return `#/businesses/${encodeURIComponent(route.id)}`
     case 'search':
       return route.q ? `#/search?q=${encodeURIComponent(route.q)}` : '#/search'
+    case 'import':
+      return '#/import'
   }
 }
 
@@ -77,5 +81,6 @@ export function sectionOf(route: Route) {
   if (route.name === 'contact') return 'contacts'
   if (route.name === 'event') return 'events'
   if (route.name === 'business') return 'businesses'
+  if (route.name === 'import') return 'companies'
   return route.name
 }
