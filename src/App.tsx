@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ActivityDialog } from './components/ActivityDialog'
 import { CalendarScreen } from './components/CalendarScreen'
+import { Dashboard, OpportunityBoard } from './components/HubScreens'
 import { BusinessDetail, BusinessList } from './components/BusinessScreens'
 import { CompanyDetail, CompanyList, ContactDetail, ContactList, EventDetail, EventList } from './components/RecordScreens'
 import { PortfolioImport } from './components/PortfolioImport'
@@ -47,7 +48,9 @@ export function App() {
       }}
     >
       <Shell>
+        {route.name === 'dashboard' && <Dashboard />}
         {route.name === 'calendar' && <CalendarScreen />}
+        {route.name === 'opportunities' && <OpportunityBoard />}
         {route.name === 'companies' && <CompanyList />}
         {route.name === 'company' && <CompanyDetail key={route.id} id={route.id} />}
         {route.name === 'contacts' && <ContactList />}

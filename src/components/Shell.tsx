@@ -1,5 +1,8 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { useAuth } from '../auth'
+import { useBusiness } from '../business'
+import { useDirectory } from '../directory'
+import { useOpportunities } from '../opportunities'
 import { supabase } from '../lib/supabase'
 import { useCrm } from '../store'
 import { sectionOf, useUI, type Route } from '../ui'
@@ -11,12 +14,17 @@ function isTyping(target: EventTarget | null) {
 }
 
 const NAV: { id: string; label: string; route: Route; icon: ReactNode }[] = [
-  { id: 'calendar', label: '캘린더', route: { name: 'calendar' }, icon: <CalendarIcon /> },
-  { id: 'companies', label: '고객사', route: { name: 'companies' }, icon: <BuildingIcon /> },
-  { id: 'contacts', label: '담당자', route: { name: 'contacts' }, icon: <PeopleIcon /> },
-  { id: 'events', label: '행사', route: { name: 'events' }, icon: <FlagIcon /> },
+  { id: 'dashboard', label: '대시보드', route: { name: 'dashboard' }, icon: <GridIcon /> },
+  { id: 'companies', label: '고객', route: { name: 'companies' }, icon: <BuildingIcon /> },
   { id: 'businesses', label: '사업', route: { name: 'businesses' }, icon: <BriefcaseIcon /> },
-  { id: 'search', label: '검색', route: { name: 'search' }, icon: <SearchIcon /> },
+  { id: 'opportunities', label: '영업기회', route: { name: 'opportunities' }, icon: <TrendIcon /> },
+  { id: 'calendar', label: '활동', route: { name: 'calendar' }, icon: <CalendarIcon /> },
+]
+
+const SHORTCUTS: { id: string; label: string; route: Route }[] = [
+  { id: 'contacts', label: '담당자', route: { name: 'contacts' } },
+  { id: 'events', label: '행사', route: { name: 'events' } },
+  { id: 'search', label: '검색', route: { name: 'search' } },
 ]
 
 function readDismissed() {
@@ -30,7 +38,16 @@ function readDismissed() {
 export function Shell({ children }: { children: ReactNode }) {
   const { route, go } = useUI()
   const { signOut } = useAuth()
-  const { resetDemo, currentUser, scheduleReady, scheduleError } = useCrm()
+  const { resetDemo, currentUser, scheduleReady, scheduleError, db } = useCrm()
+  const directory = useDirectory()
+  const portfolio = useBusiness()
+  const board = useOpportunities()
+  const companyCount = (directory.remote ? directory.companies : db.companies).length
+  const counts: Record<string, number> = {
+    companies: companyCount,
+    businesses: portfolio.businesses.length,
+    opportunities: board.opportunities.filter((item) => !item.archived).length,
+  }
   const shared = Boolean(supabase)
   const [hidden, setHidden] = useState(readDismissed)
   const [leaving, setLeaving] = useState(false)
@@ -68,7 +85,7 @@ export function Shell({ children }: { children: ReactNode }) {
   function reset() {
     if (!window.confirm('예시 데이터로 되돌리면 현재 저장된 기록이 삭제됩니다. 계속할까요?')) return
     resetDemo()
-    go({ name: 'calendar' })
+    go({ name: 'dashboard' })
   }
 
   async function logout() {
@@ -89,7 +106,7 @@ export function Shell({ children }: { children: ReactNode }) {
     <div className="stage">
       <div className="app-frame">
         <aside className="sidebar">
-          <button type="button" className="brand" onClick={() => go({ name: 'calendar' })}>
+          <button type="button" className="brand" onClick={() => go({ name: 'dashboard' })}>
             <span className="brand-mark" aria-hidden="true">
               <CalendarIcon />
             </span>
@@ -108,6 +125,20 @@ export function Shell({ children }: { children: ReactNode }) {
                 onClick={() => go(item.route)}
               >
                 {item.icon}
+                {item.label}
+                {counts[item.id] !== undefined && <span className="nav-count">{counts[item.id]}</span>}
+              </button>
+            ))}
+          </nav>
+          <p className="nav-label">바로가기</p>
+          <nav className="side-nav" aria-label="바로가기">
+            {SHORTCUTS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={active === item.id ? 'side-link on' : 'side-link'}
+                onClick={() => go(item.route)}
+              >
                 {item.label}
               </button>
             ))}
@@ -166,6 +197,26 @@ export function Shell({ children }: { children: ReactNode }) {
   )
 }
 
+function GridIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3.5" y="3.5" width="7" height="8" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.7" />
+      <rect x="13.5" y="3.5" width="7" height="5" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.7" />
+      <rect x="13.5" y="11.5" width="7" height="9" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.7" />
+      <rect x="3.5" y="14.5" width="7" height="6" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
+  )
+}
+
+function TrendIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 18l5-6 4 3 7-9" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M15 6h5v5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 function CalendarIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
@@ -180,25 +231,6 @@ function BuildingIcon() {
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4 20V6.5L12 3l8 3.5V20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
       <path d="M9 20v-5h6v5M9 9h.01M12 9h.01M15 9h.01M9 13h.01M12 13h.01M15 13h.01" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function PeopleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" strokeWidth="1.7" />
-      <path d="M3.5 19c.6-2.8 2.8-4.2 5.5-4.2s4.9 1.4 5.5 4.2" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      <circle cx="17" cy="9" r="2.2" fill="none" stroke="currentColor" strokeWidth="1.7" />
-      <path d="M16.2 14.8c1.8.2 3.3 1.2 4 3.2" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function FlagIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M6 4v16M6 5h10l-2 3.5L16 12H6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   )
 }

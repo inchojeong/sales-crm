@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { isEventAttendance } from '../attendance'
-import { useBusiness } from '../business'
+import { businessOutcomeLabel, useBusiness, type BusinessRecord } from '../business'
 import { RelationTimeline, Timeline } from './ActivityRow'
 import { BulkImport } from './BulkImport'
 import { CompanyGrid, ContactGrid } from './RecordGrids'
@@ -8,7 +8,7 @@ import { RelatedBusinesses } from './BusinessScreens'
 import { formatDayTitle, formatFullDate, todayKey, defaultStatus } from '../dates'
 import { useDirectory } from '../directory'
 import { useCrm } from '../store'
-import type { Activity, CompanyInput, Contact, ContactInput, EventInput } from '../types'
+import type { Activity, Company, CompanyInput, Contact, ContactInput, EventInput } from '../types'
 import { autoTitle } from '../templates'
 import { useUI } from '../ui'
 
@@ -52,10 +52,12 @@ function Missing({ text, onBack }: { text: string; onBack: () => void }) {
 export function CompanyList() {
   const { db, saveCompany } = useCrm()
   const directory = useDirectory()
+  const portfolio = useBusiness()
   const { go } = useUI()
   const [open, setOpen] = useState(false)
   const [grid, setGrid] = useState(false)
   const [importing, setImporting] = useState(false)
+  const [selectedId, setSelectedId] = useState('')
   const [form, setForm] = useState<CompanyInput>(blankCompany)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -86,12 +88,12 @@ export function CompanyList() {
     <section>
       <div className="page-head">
         <div>
-          <h1>고객사</h1>
-          <p className="page-intro">고객사별 담당자를 등록하고 관리할 수 있습니다.</p>
+          <h1>고객</h1>
+          <p className="page-intro">목록에서 고르면 오른쪽에서 사업 이력과 담당자를 확인합니다.</p>
         </div>
         <div className="list-actions">
           <button type="button" className="btn ghost" aria-pressed={grid} onClick={() => setGrid((value) => !value)}>
-            {grid ? '카드로 보기' : '표로 편집'}
+            {grid ? '목록으로' : '표로 편집'}
           </button>
           <button type="button" className="btn ghost" onClick={() => go({ name: 'import' })}>
             엑셀 이관
@@ -139,23 +141,105 @@ export function CompanyList() {
       ) : grid ? (
         <CompanyGrid />
       ) : (
-      <div className="entity-list">
-        {companies.map((company) => {
-          const people = contacts.filter((contact) => contact.companyId === company.id).length
-          const latest = latestDate(db.activities.filter((activity) => activity.companyId === company.id))
-          return (
-            <button key={company.id} type="button" className="entity" onClick={() => go({ name: 'company', id: company.id })}>
-              <strong>{company.name}</strong>
-              <span>
-                {[company.industry, `담당자 ${people}명`].filter(Boolean).join(' · ')}
-              </span>
-              <span>{latest ? `최근 영업활동 ${formatDayTitle(latest)}` : '영업활동 없음'}</span>
-            </button>
-          )
-        })}
-      </div>
+        <CompanyBrowse
+          companies={companies}
+          contacts={contacts}
+          activities={db.activities}
+          businesses={portfolio.businesses}
+          selectedId={selectedId || companies[0]?.id || ''}
+          onSelect={setSelectedId}
+        />
       )}
     </section>
+  )
+}
+
+function CompanyBrowse({
+  companies,
+  contacts,
+  activities,
+  businesses,
+  selectedId,
+  onSelect,
+}: {
+  companies: Company[]
+  contacts: Contact[]
+  activities: Activity[]
+  businesses: BusinessRecord[]
+  selectedId: string
+  onSelect: (id: string) => void
+}) {
+  const { go } = useUI()
+  const selected = companies.find((company) => company.id === selectedId) ?? companies[0]
+  const people = selected ? contacts.filter((contact) => contact.companyId === selected.id) : []
+  const history = selected ? businesses.filter((item) => item.companyId === selected.id) : []
+  const latest = selected ? latestDate(activities.filter((activity) => activity.companyId === selected.id)) : null
+
+  if (!selected) return <p className="empty">등록된 고객사가 없습니다.</p>
+  return (
+    <div className="browse">
+      <div className="table-wrap">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>고객사</th>
+              <th>관계</th>
+              <th>담당자</th>
+              <th>최근 활동</th>
+            </tr>
+          </thead>
+          <tbody>
+            {companies.map((company) => {
+              const count = contacts.filter((contact) => contact.companyId === company.id).length
+              const last = latestDate(activities.filter((activity) => activity.companyId === company.id))
+              return (
+                <tr
+                  key={company.id}
+                  className={company.id === selected.id ? 'on' : ''}
+                  tabIndex={0}
+                  onClick={() => onSelect(company.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      onSelect(company.id)
+                    }
+                  }}
+                >
+                  <td><b>{company.name}</b>{company.needsReview ? <em className="token warn">검토</em> : null}</td>
+                  <td>{company.relation || company.industry || '—'}</td>
+                  <td>{count}</td>
+                  <td>{last ? formatDayTitle(last) : '없음'}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      <aside className="drawer">
+        <div className="drawer-h">
+          <h2>{selected.name}</h2>
+          <button type="button" className="btn primary" onClick={() => go({ name: 'company', id: selected.id })}>전체 보기</button>
+        </div>
+        <p className="drawer-meta">{[selected.relation, selected.industry, latest ? `최근 ${formatDayTitle(latest)}` : '영업활동 없음'].filter(Boolean).join(' · ')}</p>
+        {selected.reviewNote && <p className="hint">{selected.reviewNote}</p>}
+        <h3>사업 이력</h3>
+        {history.length === 0 && <p className="empty">연결된 사업이 없습니다.</p>}
+        {history.slice(0, 4).map((item) => (
+          <button key={item.id} type="button" className="hub-row" onClick={() => go({ name: 'business', id: item.id })}>
+            <b>{item.name}</b>
+            <span>{[item.fiscalYear, businessOutcomeLabel(item.outcome)].filter(Boolean).join(' · ')}</span>
+          </button>
+        ))}
+        <h3>담당자</h3>
+        {people.length === 0 && <p className="empty">등록된 담당자가 없습니다.</p>}
+        {people.slice(0, 4).map((contact) => (
+          <button key={contact.id} type="button" className="hub-row" onClick={() => go({ name: 'contact', id: contact.id })}>
+            <b>{contact.name}</b>
+            <span>{contact.position || contact.email || '담당자'}</span>
+          </button>
+        ))}
+      </aside>
+    </div>
   )
 }
 

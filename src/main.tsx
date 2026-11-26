@@ -4,6 +4,7 @@ import { App } from './App'
 import { AuthGate } from './auth'
 import { BusinessProvider } from './business'
 import { DirectoryProvider } from './directory'
+import { OpportunityProvider } from './opportunities'
 import { CrmProvider } from './store'
 import './index.css'
 
@@ -13,7 +14,9 @@ createRoot(document.getElementById('root')!).render(
       <CrmProvider>
         <DirectoryProvider>
           <BusinessProvider>
-            <App />
+            <OpportunityProvider>
+              <App />
+            </OpportunityProvider>
           </BusinessProvider>
         </DirectoryProvider>
       </CrmProvider>

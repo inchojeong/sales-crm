@@ -408,6 +408,14 @@ export function BusinessList() {
           {open ? '닫기' : '+ 사업 등록'}
         </button>
       </div>
+      <div className="life">
+        {BUSINESS_OUTCOMES.map((item) => (
+          <div key={item.id} className="life-step">
+            <strong>{portfolio.businesses.filter((business) => business.outcome === item.id).length}</strong>
+            <span>{item.label}</span>
+          </div>
+        ))}
+      </div>
       {portfolio.error && (
         <div className="error">
           <span>{portfolio.error}</span>{' '}

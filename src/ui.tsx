@@ -2,7 +2,9 @@ import { createContext, useContext } from 'react'
 import type { CreatePrefill } from './types'
 
 export type Route =
+  | { name: 'dashboard' }
   | { name: 'calendar' }
+  | { name: 'opportunities' }
   | { name: 'companies' }
   | { name: 'company'; id: string }
   | { name: 'contacts' }
@@ -35,7 +37,9 @@ export function parseHash(hash: string): Route {
   const [pathPart, queryPart] = raw.split('?')
   const params = new URLSearchParams(queryPart ?? '')
   const parts = pathPart.replace(/^\//, '').split('/').filter(Boolean)
-  if (parts.length === 0) return { name: 'calendar' }
+  if (parts.length === 0 || parts[0] === 'dashboard') return { name: 'dashboard' }
+  if (parts[0] === 'calendar') return { name: 'calendar' }
+  if (parts[0] === 'opportunities') return { name: 'opportunities' }
   if (parts[0] === 'companies' && parts[1]) return { name: 'company', id: decodeURIComponent(parts[1]) }
   if (parts[0] === 'companies') return { name: 'companies' }
   if (parts[0] === 'contacts' && parts[1]) return { name: 'contact', id: decodeURIComponent(parts[1]) }
@@ -46,13 +50,17 @@ export function parseHash(hash: string): Route {
   if (parts[0] === 'businesses') return { name: 'businesses' }
   if (parts[0] === 'search') return { name: 'search', q: params.get('q') ?? '' }
   if (parts[0] === 'import') return { name: 'import' }
-  return { name: 'calendar' }
+  return { name: 'dashboard' }
 }
 
 export function routeToHash(route: Route) {
   switch (route.name) {
-    case 'calendar':
+    case 'dashboard':
       return '#/'
+    case 'calendar':
+      return '#/calendar'
+    case 'opportunities':
+      return '#/opportunities'
     case 'companies':
       return '#/companies'
     case 'company':
