@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { supabase } from './lib/supabase'
 import type { Company, CompanyInput, Contact, ContactInput } from './types'
 
@@ -7,7 +7,9 @@ const SAVE_ERROR = '저장하지 못했습니다. 잠시 후 다시 시도해 �
 const DELETE_ERROR = '삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.'
 const ADMIN_DELETE = '관리자 계정에서만 삭제할 수 있습니다.'
 
-const COMPANY_COLUMNS = 'id, name, industry, website, phone, address, summary'
+const COMPANY_BASE_COLUMNS = 'id, name, industry, website, phone, address, summary'
+const COMPANY_EXTRA_COLUMNS = 'relation, business_no, needs_review, review_note, last_contact, priority, source'
+const COMPANY_COLUMNS = `${COMPANY_BASE_COLUMNS}, ${COMPANY_EXTRA_COLUMNS}`
 const CONTACT_COLUMNS = 'id, company_id, name, department, position, email, phone, memo'
 
 interface CompanyRow {
@@ -18,6 +20,13 @@ interface CompanyRow {
   phone: string
   address: string
   summary: string
+  relation?: string
+  business_no?: string
+  needs_review?: boolean
+  review_note?: string
+  last_contact?: string | null
+  priority?: string
+  source?: string
 }
 
 interface ContactRow {
@@ -38,6 +47,8 @@ interface DirectoryApi {
   companies: Company[]
   contacts: Contact[]
   companyById: Map<string, Company>
+  /** portfolio.sql 실행 여부. false이면 확장 항목은 저장·표시되지 않습니다. */
+  extended: boolean
   refresh: () => Promise<void>
   saveCompany: (input: CompanyInput) => Promise<string>
   saveContact: (input: ContactInput) => Promise<string>
@@ -56,6 +67,13 @@ function toCompany(row: CompanyRow): Company {
     phone: row.phone,
     address: row.address,
     summary: row.summary,
+    relation: row.relation ?? '',
+    businessNo: row.business_no ?? '',
+    needsReview: row.needs_review ?? false,
+    reviewNote: row.review_note ?? '',
+    lastContact: row.last_contact ?? null,
+    priority: row.priority ?? '',
+    source: row.source ?? '',
   }
 }
 
@@ -72,8 +90,8 @@ function toContact(row: ContactRow): Contact {
   }
 }
 
-function companyPayload(input: CompanyInput) {
-  return {
+function companyPayload(input: CompanyInput, extended: boolean) {
+  const base = {
     name: input.name.trim(),
     industry: input.industry.trim(),
     website: input.website.trim(),
@@ -81,6 +99,17 @@ function companyPayload(input: CompanyInput) {
     address: input.address.trim(),
     summary: input.summary.trim(),
   }
+  if (!extended) return base
+  // 값이 넘어온 확장 항목만 저장해, 기존 값을 실수로 비우지 않습니다.
+  const extra: Record<string, string | boolean | null> = {}
+  if (input.relation !== undefined) extra.relation = input.relation.trim()
+  if (input.businessNo !== undefined) extra.business_no = input.businessNo.trim()
+  if (input.needsReview !== undefined) extra.needs_review = input.needsReview
+  if (input.reviewNote !== undefined) extra.review_note = input.reviewNote.trim()
+  if (input.lastContact !== undefined) extra.last_contact = input.lastContact || null
+  if (input.priority !== undefined) extra.priority = input.priority.trim()
+  if (input.source !== undefined) extra.source = input.source.trim()
+  return { ...base, ...extra }
 }
 
 function explainDelete(error: { code?: string }) {
@@ -115,13 +144,20 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [ready, setReady] = useState(!remote)
   const [error, setError] = useState('')
+  const extended = useRef(true)
+  const [wideReady, setWideReady] = useState(true)
 
   const refresh = useCallback(async () => {
     if (!supabase) return
-    const [companyResult, contactResult] = await Promise.all([
+    const [wide, contactResult] = await Promise.all([
       supabase.from('companies').select(COMPANY_COLUMNS),
       supabase.from('contacts').select(CONTACT_COLUMNS),
     ])
+    // 확장 항목(portfolio.sql)이 아직 없으면 기본 항목만으로 계속 동작합니다.
+    let companyResult = wide
+    extended.current = !wide.error
+    setWideReady(!wide.error)
+    if (wide.error) companyResult = await supabase.from('companies').select(COMPANY_BASE_COLUMNS)
     if (companyResult.error || contactResult.error) {
       setError(LOAD_ERROR)
       setReady(true)
@@ -144,13 +180,14 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
 
   const saveCompany = useCallback(async (input: CompanyInput) => {
     if (!supabase) throw new Error(SAVE_ERROR)
-    const payload = companyPayload(input)
+    const payload = companyPayload(input, extended.current)
+    const columns = extended.current ? COMPANY_COLUMNS : COMPANY_BASE_COLUMNS
     const query = input.id
-      ? supabase.from('companies').update(payload).eq('id', input.id).select(COMPANY_COLUMNS).single()
-      : supabase.from('companies').insert(payload).select(COMPANY_COLUMNS).single()
+      ? supabase.from('companies').update(payload).eq('id', input.id).select(columns).single()
+      : supabase.from('companies').insert(payload).select(columns).single()
     const { data, error: saveError } = await query
     if (saveError || !data) throw new Error(SAVE_ERROR)
-    const company = toCompany(data as CompanyRow)
+    const company = toCompany(data as unknown as CompanyRow)
     setCompanies((current) => {
       const exists = current.some((item) => item.id === company.id)
       return exists ? current.map((item) => (item.id === company.id ? company : item)) : [...current, company]
@@ -214,8 +251,8 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
   const companyById = useMemo(() => new Map(companies.map((company) => [company.id, company])), [companies])
 
   const value = useMemo<DirectoryApi>(
-    () => ({ remote, ready, error, companies, contacts, companyById, refresh, saveCompany, saveContact, deleteCompany, deleteContact }),
-    [remote, ready, error, companies, contacts, companyById, refresh, saveCompany, saveContact, deleteCompany, deleteContact],
+    () => ({ remote, ready, error, companies, contacts, companyById, extended: wideReady, refresh, saveCompany, saveContact, deleteCompany, deleteContact }),
+    [remote, ready, error, companies, contacts, companyById, wideReady, refresh, saveCompany, saveContact, deleteCompany, deleteContact],
   )
 
   return <DirectoryContext.Provider value={value}>{children}</DirectoryContext.Provider>

@@ -10,6 +10,16 @@ export interface Company {
   phone: string
   address: string
   summary: string
+  /** 관계 구분 (예: 데이터바우처 과거 고객) */
+  relation?: string
+  /** 사업자등록번호. 중복 확인의 우선 기준입니다. */
+  businessNo?: string
+  needsReview?: boolean
+  reviewNote?: string
+  lastContact?: string | null
+  /** 우선순위 (높음·보통·낮음) */
+  priority?: string
+  source?: string
 }
 
 export interface Contact {
@@ -68,6 +78,13 @@ export interface CompanyInput {
   phone: string
   address: string
   summary: string
+  relation?: string
+  businessNo?: string
+  needsReview?: boolean
+  reviewNote?: string
+  lastContact?: string | null
+  priority?: string
+  source?: string
 }
 
 export interface ContactInput {

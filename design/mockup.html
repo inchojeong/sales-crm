@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TBELL Business Hub · UI 시안</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/700.css">
+<style>
+:root {
+  --bg: #e7eae7;
+  --surface: #f7f8f6;
+  --line: #d9ddd9;
+  --line-strong: #c5cac6;
+  --ink: #14181a;
+  --ink-2: #333c3a;
+  --muted: #5e6865;
+  --faint: #8c9692;
+  --accent: #bfe83a;
+  --accent-ink: #4a6a00;
+  --accent-soft: #edf5cf;
+  --ok: #41590a;   --ok-soft: #e5f3b8;
+  --warn: #7a5400; --warn-soft: #f8e8bd;
+  --bad: #9a2f2a;  --bad-soft: #f7d9d5;
+  --run: #0b6b60;  --run-soft: #d3f1ec;
+  --off: #4f5a57;  --off-soft: #dde2df;
+  --violet: #434b99; --violet-soft: #e2e4f5;
+  --neon-lime: #bfe83a; --neon-cyan: #3fcfbd; --neon-amber: #f0b429; --neon-coral: #f0675f; --neon-peri: #7d86d9; --steel: #c3c9c5;
+  --mono: "JetBrains Mono", "Pretendard Variable", Pretendard, "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --radius: 10px;
+  --shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 1px 2px rgba(20,24,26,.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Pretendard Variable", Pretendard, "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+  background: var(--bg); color: var(--ink); font-size: 14px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased; letter-spacing: -0.01em;
+}
+button { font: inherit; color: inherit; cursor: pointer; background: none; border: none; }
+svg { flex: none; }
+
+.app { display: grid; grid-template-columns: 232px 1fr; height: 100vh; }
+
+/* ---------- Sidebar ---------- */
+.side { background: var(--surface); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 18px 12px 14px; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; }
+.brand-mark { width: 32px; height: 32px; border-radius: 9px; background: linear-gradient(135deg, #3b7bff, #2158d6); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 15px; box-shadow: 0 4px 10px rgba(47,111,237,.3); }
+.brand strong { display: block; font-size: 14px; letter-spacing: -0.02em; }
+.brand small { color: var(--faint); font-size: 11px; }
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav-label { font-size: 11px; color: var(--faint); font-weight: 600; padding: 14px 10px 6px; letter-spacing: 0; }
+.nav button { display: flex; align-items: center; gap: 11px; height: 38px; padding: 0 10px; border-radius: 9px; color: var(--ink-2); font-weight: 500; text-align: left; transition: background .12s; }
+.nav button:hover { background: #f3f4f7; }
+.nav button.on { background: var(--accent-soft); color: var(--accent-ink); font-weight: 650; }
+.nav button .count { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--muted); background: #f0f2f6; border-radius: 999px; padding: 1px 8px; }
+.nav button.on .count { background: #fff; color: var(--accent-ink); }
+.side-foot { margin-top: auto; border-top: 1px solid var(--line); padding-top: 12px; display: flex; align-items: center; gap: 10px; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: #dfe7fb; color: var(--accent-ink); display: grid; place-items: center; font-weight: 700; font-size: 13px; }
+.side-foot strong { display: block; font-size: 13px; }
+.side-foot small { color: var(--faint); font-size: 11px; }
+
+/* ---------- Main ---------- */
+.main { display: flex; flex-direction: column; min-width: 0; height: 100vh; }
+.top { display: flex; align-items: center; gap: 12px; padding: 12px 28px; background: rgba(245,246,248,.85); backdrop-filter: blur(8px); border-bottom: 1px solid transparent; }
+.search { flex: 1; max-width: 520px; display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 11px; color: var(--faint); box-shadow: var(--shadow); }
+.search span { flex: 1; font-size: 13.5px; }
+kbd { font: 600 11px/1 inherit; color: var(--muted); background: #f1f3f7; border: 1px solid var(--line); border-radius: 6px; padding: 3px 6px; }
+.top-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 10px; font-weight: 600; font-size: 13px; border: 1px solid var(--line-strong); background: var(--surface); transition: all .12s; }
+.btn:hover { border-color: #b8c0cf; background: #fafbfc; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(47,111,237,.28); }
+.btn.primary:hover { background: #2561d6; }
+.btn.sm { height: 30px; padding: 0 11px; font-size: 12.5px; border-radius: 8px; }
+.icon-btn { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: var(--muted); background: var(--surface); border: 1px solid var(--line); }
+
+.body { flex: 1; overflow: auto; padding: 8px 28px 40px; }
+.screen { display: none; animation: fade .18s ease; }
+.screen.on { display: block; }
+@keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 14px 0 18px; }
+.head h1 { font-size: 24px; letter-spacing: -0.03em; font-weight: 750; }
+.head p { color: var(--muted); margin-top: 2px; }
+.eyebrow { font-size: 12px; font-weight: 650; color: var(--accent); letter-spacing: .02em; margin-bottom: 2px; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.card-h { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 0; }
+.card-h h3 { font-size: 14.5px; font-weight: 700; letter-spacing: -0.02em; }
+.card-h a { font-size: 12.5px; color: var(--muted); cursor: pointer; }
+.card-b { padding: 14px 18px 18px; }
+
+.badge { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 999px; font-size: 11.5px; font-weight: 650; white-space: nowrap; }
+.badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.b-ok { color: var(--ok); background: var(--ok-soft); }
+.b-warn { color: var(--warn); background: var(--warn-soft); }
+.b-bad { color: var(--bad); background: var(--bad-soft); }
+.b-run { color: var(--run); background: var(--run-soft); }
+.b-off { color: var(--off); background: var(--off-soft); }
+.b-violet { color: var(--violet); background: var(--violet-soft); }
+.tag { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: #f1f3f7; color: var(--ink-2); font-size: 11.5px; font-weight: 550; }
+
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.grid2 { display: grid; grid-template-columns: 1.3fr 1fr; gap: 14px; margin-top: 14px; }
+
+/* KPI */
+.kpi { padding: 18px; }
+.kpi-top { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-weight: 600; font-size: 13px; }
+.kpi-ico { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; }
+.kpi-num { font-size: 34px; font-weight: 780; letter-spacing: -0.04em; margin: 10px 0 2px; }
+.kpi-num small { font-size: 14px; font-weight: 600; color: var(--muted); margin-left: 4px; letter-spacing: 0; }
+.kpi-row { display: flex; gap: 16px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line-strong); }
+.kpi-row div { font-size: 12px; color: var(--muted); }
+.kpi-row b { display: block; font-size: 15px; color: var(--ink); font-weight: 700; }
+.bar { display: flex; height: 8px; border-radius: 999px; overflow: hidden; background: #eef0f4; margin-top: 12px; gap: 2px; }
+.bar i { display: block; }
+
+/* lists */
+.todo { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.todo:last-child { border: none; padding-bottom: 0; }
+.chk { width: 18px; height: 18px; border-radius: 6px; border: 1.6px solid var(--line-strong); flex: none; }
+.todo-main { flex: 1; min-width: 0; }
+.todo-main b { font-weight: 600; display: block; font-size: 13.5px; }
+.todo-main span { font-size: 12px; color: var(--muted); }
+.due { font-size: 12px; font-weight: 650; color: var(--muted); white-space: nowrap; }
+.due.hot { color: var(--bad); }
+
+.funnel { display: flex; flex-direction: column; gap: 9px; }
+.funnel-row { display: grid; grid-template-columns: 76px 1fr 28px; align-items: center; gap: 10px; font-size: 12.5px; color: var(--ink-2); }
+.funnel-bar { height: 22px; border-radius: 7px; background: var(--accent-soft); position: relative; overflow: hidden; }
+.funnel-bar i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #7ba4f7, var(--accent)); border-radius: 7px; }
+.funnel-row b { text-align: right; font-weight: 700; }
+
+.timeline { position: relative; margin-left: 6px; }
+.tl { position: relative; padding: 0 0 16px 22px; }
+.tl::before { content: ""; position: absolute; left: 4px; top: 6px; bottom: -6px; width: 1px; background: var(--line-strong); }
+.tl:last-child::before { display: none; }
+.tl::after { content: ""; position: absolute; left: 0; top: 5px; width: 9px; height: 9px; border-radius: 50%; background: #fff; border: 2px solid var(--accent); }
+.tl.v::after { border-color: var(--violet); } .tl.w::after { border-color: #e08a1e; } .tl.o::after { border-color: #20a47a; }
+.tl b { display: block; font-size: 13.5px; font-weight: 600; }
+.tl span { font-size: 12px; color: var(--muted); }
+
+/* table */
+.toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.chip { height: 32px; padding: 0 13px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); font-size: 13px; font-weight: 550; color: var(--ink-2); }
+.chip.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.chip em { font-style: normal; opacity: .55; margin-left: 5px; font-weight: 500; }
+.seg { display: inline-flex; padding: 3px; background: #eceef2; border-radius: 10px; margin-left: auto; }
+.seg button { height: 28px; padding: 0 12px; border-radius: 8px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.seg button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); padding: 11px 16px; background: #fafbfc; border-bottom: 1px solid var(--line); position: sticky; top: 0; white-space: nowrap; }
+td { padding: 13px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tbody tr { cursor: pointer; transition: background .1s; }
+tbody tr:hover { background: #f8faff; }
+tbody tr.sel { background: var(--accent-soft); }
+tr:last-child td { border-bottom: none; }
+.co { display: flex; align-items: center; gap: 12px; }
+.logo { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font-weight: 750; font-size: 13px; flex: none; }
+.co b { display: block; font-weight: 650; } .co small { color: var(--muted); font-size: 12px; }
+.muted { color: var(--muted); }
+.wrap { overflow: hidden; }
+
+/* split w/ drawer */
+.split { display: grid; grid-template-columns: 1fr 380px; gap: 14px; align-items: start; }
+.drawer { position: sticky; top: 0; }
+.drawer-h { padding: 18px; border-bottom: 1px solid var(--line); }
+.drawer-h .logo { width: 44px; height: 44px; font-size: 16px; border-radius: 12px; }
+.drawer-h h2 { font-size: 18px; letter-spacing: -0.03em; margin-top: 12px; }
+.mini3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 16px 18px 0; }
+.mini3 div { background: #f7f8fa; border-radius: 10px; padding: 10px 12px; }
+.mini3 b { font-size: 20px; font-weight: 760; display: block; letter-spacing: -0.03em; }
+.mini3 span { font-size: 11.5px; color: var(--muted); }
+.sec-t { font-size: 12px; font-weight: 650; color: var(--muted); margin: 16px 0 8px; letter-spacing: .02em; }
+.hist { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; }
+.hist b { font-size: 13px; font-weight: 600; display: block; } .hist span { font-size: 12px; color: var(--muted); }
+.hist .badge { margin-left: auto; }
+
+/* detail page */
+.hero { padding: 22px; display: flex; gap: 18px; align-items: center; }
+.hero .logo { width: 60px; height: 60px; border-radius: 16px; font-size: 22px; }
+.hero h2 { font-size: 22px; letter-spacing: -0.03em; font-weight: 750; }
+.hero p { color: var(--muted); margin: 2px 0 8px; }
+.hero-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.hero-actions { margin-left: auto; display: flex; gap: 8px; }
+.stat3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 14px; }
+.stat { padding: 16px 18px; display: flex; align-items: center; gap: 14px; }
+.stat .kpi-ico { width: 40px; height: 40px; border-radius: 11px; }
+.stat b { font-size: 24px; font-weight: 780; letter-spacing: -0.03em; display: block; line-height: 1.1; }
+.stat span { font-size: 12.5px; color: var(--muted); }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line-strong); margin: 22px 0 16px; }
+.tabs button { height: 40px; padding: 0 14px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tabs button.on { color: var(--accent-ink); border-color: var(--accent); }
+.cols { display: grid; grid-template-columns: 1.6fr 1fr; gap: 14px; }
+.step { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+.step i { flex: 1; height: 5px; border-radius: 999px; background: #e6e9ef; }
+.step i.d { background: var(--accent); } .step i.x { background: #cfd5e0; }
+.rec { display: flex; gap: 10px; padding: 12px; border-radius: 10px; background: linear-gradient(135deg, #f3f0ff, #eef3ff); border: 1px solid #e2e0fb; margin-bottom: 8px; }
+.rec b { font-size: 13px; display: block; } .rec span { font-size: 12px; color: var(--muted); }
+.rec .score { margin-left: auto; font-weight: 780; color: var(--violet); font-size: 15px; }
+.disclaim { font-size: 11.5px; color: var(--faint); margin-top: 8px; }
+
+/* kanban */
+.kanban { display: grid; grid-template-columns: repeat(6, minmax(210px, 1fr)); gap: 12px; overflow-x: auto; padding-bottom: 10px; }
+.col { background: #eceef2; border-radius: 14px; padding: 10px; min-height: 420px; }
+.col-h { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 10px; font-weight: 700; font-size: 13px; }
+.col-h span { font-size: 11.5px; color: var(--muted); font-weight: 600; background: #fff; border-radius: 999px; padding: 1px 8px; }
+.kc { background: #fff; border-radius: 11px; padding: 12px 13px; margin-bottom: 8px; border: 1px solid var(--line); box-shadow: 0 1px 2px rgba(0,0,0,.04); cursor: grab; }
+.kc:hover { border-color: #bcd0fb; box-shadow: 0 4px 14px rgba(47,111,237,.12); }
+.kc small { color: var(--muted); font-size: 11.5px; font-weight: 600; }
+.kc b { display: block; font-size: 13.5px; font-weight: 650; margin: 2px 0 8px; }
+.kc-f { display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--muted); }
+.kc-f .av { width: 22px; height: 22px; border-radius: 50%; background: #dfe7fb; color: var(--accent-ink); display: grid; place-items: center; font-size: 10px; font-weight: 700; }
+
+/* calendar */
+.cal { overflow: hidden; }
+.cal-h { display: grid; grid-template-columns: 56px repeat(7, 1fr); border-bottom: 1px solid var(--line); }
+.cal-h div { padding: 10px 6px; text-align: center; font-size: 12px; color: var(--muted); font-weight: 600; }
+.cal-h div b { display: grid; place-items: center; width: 30px; height: 30px; margin: 2px auto 0; border-radius: 50%; font-size: 15px; color: var(--ink); }
+.cal-h .today b { background: var(--accent); color: #fff; }
+.cal-h .sun { color: var(--bad); }
+.cal-b { display: grid; grid-template-columns: 56px repeat(7, 1fr); position: relative; }
+.hours div { height: 56px; font-size: 11px; color: var(--faint); text-align: right; padding-right: 8px; transform: translateY(-7px); }
+.day { border-left: 1px solid var(--line); position: relative; background-image: repeating-linear-gradient(to bottom, transparent 0 55px, var(--line) 55px 56px); }
+.day.today { background-color: #fafcff; }
+.ev { position: absolute; left: 4px; right: 4px; border-radius: 8px; padding: 5px 8px; font-size: 11.5px; line-height: 1.35; border-left: 3px solid; overflow: hidden; cursor: pointer; }
+.ev b { display: block; font-weight: 650; font-size: 12px; }
+.ev.m { background: var(--run-soft); border-color: var(--run); color: #1b4aa8; }
+.ev.e { background: var(--violet-soft); border-color: var(--violet); color: #53359f; }
+.ev.d { background: var(--bad-soft); border-color: var(--bad); color: #9a2540; }
+.ev.f { background: var(--warn-soft); border-color: #e08a1e; color: #8b4b07; }
+.now { position: absolute; left: 0; right: 0; height: 2px; background: var(--bad); z-index: 2; }
+.now::before { content: ""; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--bad); }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); }
+.legend i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; }
+
+.note { margin-top: 28px; padding: 12px 16px; border: 1px dashed var(--line-strong); border-radius: 10px; color: var(--muted); font-size: 12.5px; background: #fafbfc; }
+
+/* ---------- v2 theme: graphite + muted neon ---------- */
+.main { background-color: var(--bg); background-image: radial-gradient(#c9cec9 1px, transparent 1px); background-size: 20px 20px; }
+.top { background: transparent; backdrop-filter: none; }
+.side { background: #171b1d; border-right: 1px solid #0d1011; }
+.brand strong { color: #f0f3f1; }
+.brand small { color: #77827e; }
+.brand-mark { background: var(--neon-lime); color: #14181a; border-radius: 8px; font-family: var(--mono); box-shadow: 0 0 0 1px rgba(191,232,58,.45), 0 0 20px rgba(191,232,58,.28); }
+.nav-label { color: #5f6a67; font-family: var(--mono); }
+.nav button { color: #a9b3af; border-radius: 8px; position: relative; }
+.nav button:hover { background: rgba(255,255,255,.06); color: #e6ebe8; }
+.nav button.on { background: rgba(191,232,58,.11); color: #e7fb9b; }
+.nav button.on::before { content: ""; position: absolute; left: -12px; top: 9px; bottom: 9px; width: 3px; border-radius: 0 3px 3px 0; background: var(--neon-lime); box-shadow: 0 0 10px var(--neon-lime); }
+.nav button .count { background: rgba(255,255,255,.08); color: #aab4b0; font-family: var(--mono); }
+.nav button.on .count { background: var(--neon-lime); color: #14181a; }
+.side-foot { border-top: 1px solid rgba(255,255,255,.08); }
+.side-foot strong { color: #e9eeeb; }
+.side-foot small { color: #77827e; }
+.avatar { background: #283033; color: var(--neon-lime); font-family: var(--mono); }
+
+.search { background: var(--surface); border-color: var(--line-strong); border-radius: 9px; }
+kbd { font-family: var(--mono); background: #e8ece8; }
+.icon-btn { background: var(--surface); border-radius: 9px; }
+.btn { border-radius: 8px; background: var(--surface); border-color: var(--line-strong); }
+.btn:hover { background: #fff; border-color: #98a19d; }
+.btn.primary { background: var(--neon-lime); border-color: #a9d02a; color: #14181a; box-shadow: 0 0 0 1px rgba(20,24,26,.06), 0 4px 14px rgba(191,232,58,.35); }
+.btn.primary:hover { background: #cdf04f; }
+.eyebrow { font-family: var(--mono); text-transform: uppercase; letter-spacing: .02em; font-size: 11.5px; color: var(--accent-ink); }
+.head h1 { letter-spacing: -0.035em; }
+
+.card { background: var(--surface); border-color: var(--line-strong); }
+.badge::before { background: var(--dot, currentColor); box-shadow: 0 0 6px var(--dot, currentColor); }
+.b-ok { --dot: #9fd11f; } .b-warn { --dot: #f0b429; } .b-bad { --dot: #f0675f; } .b-run { --dot: #3fcfbd; } .b-off { --dot: #8a9490; } .b-violet { --dot: #7d86d9; }
+.tag { background: #e6e9e6; color: var(--ink-2); border-radius: 5px; font-family: var(--mono); font-size: 11px; font-weight: 500; }
+
+.kpi-num, .stat b, .mini3 b, .funnel-row b, .due, .score { font-family: var(--mono); letter-spacing: -0.03em; font-feature-settings: "tnum"; }
+.kpi-num { font-weight: 700; }
+.kpi-row b { font-family: var(--mono); }
+.kpi-ico { border-radius: 8px; }
+.bar { background: #dde1dd; height: 7px; border-radius: 3px; }
+.bar i { border-radius: 0; }
+.chk { border-radius: 4px; }
+.due.hot { color: #b5403a; }
+
+.funnel-bar { background: #dfe3df; border-radius: 4px; }
+.funnel-bar i { background: linear-gradient(90deg, #8fb82a, var(--neon-lime)); border-radius: 4px; box-shadow: 0 0 12px rgba(191,232,58,.45); }
+
+.tl::after { border-color: var(--neon-cyan); background: var(--surface); box-shadow: 0 0 6px rgba(63,207,189,.7); }
+.tl.v::after { border-color: var(--neon-peri); box-shadow: 0 0 6px rgba(125,134,217,.7); }
+.tl.w::after { border-color: var(--neon-amber); box-shadow: 0 0 6px rgba(240,180,41,.7); }
+.tl.o::after { border-color: var(--neon-lime); box-shadow: 0 0 6px rgba(191,232,58,.8); }
+
+.chip { background: var(--surface); border-radius: 7px; border-color: var(--line-strong); }
+.chip.on { background: #171b1d; border-color: #171b1d; color: var(--neon-lime); }
+.seg { background: #d9ddd9; border-radius: 8px; }
+.seg button { border-radius: 6px; }
+.seg button.on { background: var(--surface); }
+th { background: #eef0ed; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0; font-weight: 500; }
+tbody tr:hover { background: #f1f5e4; }
+tbody tr.sel { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--neon-lime); }
+.logo { border-radius: 8px; font-family: var(--mono); }
+.hero .logo { border-radius: 12px; }
+.mini3 div { background: #eceee9; border-radius: 8px; }
+.hist { border-color: var(--line-strong); border-radius: 8px; background: #fbfcfa; }
+.sec-t { font-family: var(--mono); text-transform: uppercase; font-size: 11px; letter-spacing: 0; }
+
+.tabs button.on { color: var(--ink); border-color: var(--neon-lime); box-shadow: 0 2px 0 var(--neon-lime); }
+.step i { border-radius: 1px; height: 4px; background: #d7dcd8; }
+.step i.d { background: var(--neon-lime); box-shadow: 0 0 6px rgba(191,232,58,.6); }
+.step i.x { background: #b8c0bb; }
+.rec { background: linear-gradient(135deg, #f1f8d8, #dcf3ee); border-color: #cfe08c; border-radius: 8px; }
+.rec .score { color: var(--ok); }
+
+.col { background: #dadeda; border-radius: 10px; }
+.col-h { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0; }
+.col-h span { background: #171b1d; color: var(--neon-lime); }
+.kc { background: var(--surface); border-radius: 8px; border-color: var(--line-strong); }
+.kc:hover { border-color: #a9d02a; box-shadow: 0 0 0 1px #a9d02a, 0 6px 18px rgba(143,184,42,.22); }
+.kc-f .av { background: #283033; color: var(--neon-lime); font-family: var(--mono); }
+
+.cal-h div b { font-family: var(--mono); }
+.cal-h .today b { background: var(--neon-lime); color: #14181a; box-shadow: 0 0 14px rgba(191,232,58,.6); }
+.cal-h .sun { color: #b5403a; }
+.hours div { font-family: var(--mono); }
+.day.today { background-color: #f1f6e0; }
+.ev { border-radius: 6px; }
+.ev.m { background: var(--run-soft); border-color: var(--neon-cyan); color: #0b5a51; }
+.ev.e { background: var(--violet-soft); border-color: var(--neon-peri); color: #343b80; }
+.ev.d { background: var(--bad-soft); border-color: var(--neon-coral); color: #86271f; }
+.ev.f { background: var(--warn-soft); border-color: var(--neon-amber); color: #6b4a00; }
+.now { background: var(--neon-coral); box-shadow: 0 0 8px var(--neon-coral); }
+.now::before { background: var(--neon-coral); }
+.note { background: transparent; border-color: var(--line-strong); font-family: var(--mono); font-size: 11.5px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <div class="brand-mark">T</div>
+      <div><strong>Business Hub</strong><small>TBELL 사업전략팀</small></div>
+    </div>
+    <nav class="nav" id="nav">
+      <button data-go="dash" class="on"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="8" rx="2"/><rect x="13.5" y="3.5" width="7" height="5" rx="2"/><rect x="13.5" y="11.5" width="7" height="9" rx="2"/><rect x="3.5" y="14.5" width="7" height="6" rx="2"/></svg>대시보드</button>
+      <button data-go="cust"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6.5L12 3l8 3.5V20"/><path d="M9 20v-5h6v5M9 9h.01M12 9h.01M15 9h.01M9 12.5h.01M12 12.5h.01M15 12.5h.01"/></svg>고객<span class="count">48</span></button>
+      <button data-go="proj"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7M3 12.5h18"/></svg>사업<span class="count">59</span></button>
+      <button data-go="opp"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/><path d="M15 6h5v5"/></svg>영업기회<span class="count">12</span></button>
+      <button data-go="act"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M8.5 3.5v3M15.5 3.5v3"/></svg>활동</button>
+    </nav>
+    <div class="nav-label">바로가기</div>
+    <div class="nav">
+      <button data-go="cust360"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3 2"/></svg>최근 본 · 파이어넷</button>
+    </div>
+    <div class="side-foot"><div class="avatar">주</div><div><strong>주호정</strong><small>관리자</small></div></div>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <div class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16.5L20 20.5"/></svg><span>기업, 담당자, 사업, 공고 검색 · 또는 “파이어넷 내일 14시 미팅”</span><kbd>Ctrl K</kbd></div>
+      <div class="top-actions">
+        <button class="icon-btn" title="알림"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 17V11a6 6 0 1 1 12 0v6l1.5 2h-15zM10 21h4"/></svg></button>
+        <button class="btn">붙여넣기 등록</button>
+        <button class="btn primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>등록</button>
+      </div>
+    </header>
+
+    <main class="body">
+
+<!-- ================= 대시보드 ================= -->
+<section class="screen on" id="dash">
+  <div class="head">
+    <div><div class="eyebrow">2026년 11월 26일 목요일</div><h1>안녕하세요, 주호정님</h1><p>오늘 처리할 일 4건, 이번 주 마감 공고 2건이 있습니다.</p></div>
+    <div class="top-actions"><button class="btn">이번 주</button><button class="btn">내 업무만</button></div>
+  </div>
+  <div class="grid3">
+    <div class="card kpi">
+      <div class="kpi-top">고객 현황<span class="kpi-ico" style="background:var(--accent-soft);color:var(--accent-ink)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6.5L12 3l8 3.5V20"/></svg></span></div>
+      <div class="kpi-num">48<small>개 기업·기관</small></div>
+      <div class="bar"><i style="width:56%;background:#3fcfbd"></i><i style="width:26%;background:#bfe83a"></i><i style="width:18%;background:#c3c9c5"></i></div>
+      <div class="kpi-row"><div><b>27</b>기존</div><div><b>12</b>신규</div><div><b>9</b>휴면</div></div>
+    </div>
+    <div class="card kpi">
+      <div class="kpi-top">사업 현황<span class="kpi-ico" style="background:var(--violet-soft);color:var(--violet)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7"/></svg></span></div>
+      <div class="kpi-num">59<small>건 사업 이력</small></div>
+      <div class="bar"><i style="width:34%;background:#9fd11f"></i><i style="width:20%;background:#3fcfbd"></i><i style="width:46%;background:#c3c9c5"></i></div>
+      <div class="kpi-row"><div><b>20</b>선정</div><div><b>12</b>수행 중</div><div><b>27</b>미선정·종료</div></div>
+    </div>
+    <div class="card kpi">
+      <div class="kpi-top">업무 현황<span class="kpi-ico" style="background:var(--warn-soft);color:#a86f00"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></div>
+      <div class="kpi-num">9<small>건 이번 주</small></div>
+      <div class="bar"><i style="width:22%;background:#f0675f"></i><i style="width:44%;background:#3fcfbd"></i><i style="width:34%;background:#f0b429"></i></div>
+      <div class="kpi-row"><div><b>2</b>공고 마감</div><div><b>4</b>미팅</div><div><b>3</b>후속 연락</div></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-h"><h3>오늘 할 일</h3><a>전체 보기</a></div>
+      <div class="card-b">
+        <div class="todo"><div class="chk"></div><div class="todo-main"><b>2027 스마트공장 구축지원 신청서 초안 검토</b><span>파이어넷 · 사업 신청</span></div><span class="due hot">오늘</span></div>
+        <div class="todo"><div class="chk"></div><div class="todo-main"><b>유알커넥션 플랫폼 고도화 과업 범위 회신</b><span>유알커넥션 · 후속 연락</span></div><span class="due hot">오늘 17:00</span></div>
+        <div class="todo"><div class="chk"></div><div class="todo-main"><b>AI바우처 수요기업 모집 공고 확인</b><span>공고 마감</span></div><span class="due">11/28</span></div>
+        <div class="todo"><div class="chk"></div><div class="todo-main"><b>키자미테이블 CBT 해외 적용 미팅 준비</b><span>키자미테이블 · 미팅</span></div><span class="due">12/1</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h3>영업 파이프라인</h3><a>칸반으로 보기</a></div>
+      <div class="card-b">
+        <div class="funnel">
+          <div class="funnel-row">수요 발굴<div class="funnel-bar"><i style="width:100%"></i></div><b>4</b></div>
+          <div class="funnel-row">사업 매칭<div class="funnel-bar"><i style="width:75%"></i></div><b>3</b></div>
+          <div class="funnel-row">고객 협의<div class="funnel-bar"><i style="width:50%"></i></div><b>2</b></div>
+          <div class="funnel-row">제안·신청<div class="funnel-bar"><i style="width:50%"></i></div><b>2</b></div>
+          <div class="funnel-row">선정·계약<div class="funnel-bar"><i style="width:25%"></i></div><b>1</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="grid2" style="grid-template-columns:1fr 1.3fr">
+    <div class="card">
+      <div class="card-h"><h3>다시 연락할 만한 고객</h3><a>휴면 고객 전체</a></div>
+      <div class="card-b">
+        <div class="hist"><div class="logo" style="background:#d3f1ec;color:#0b6b60">위</div><div><b>위존</b><span>마지막 접점 142일 전 · 제조 학습데이터</span></div><span class="badge b-warn">재제안 후보</span></div>
+        <div class="hist"><div class="logo" style="background:#e2e4f5;color:#434b99">파</div><div><b>파이어넷</b><span>2025 AI바우처 미선정 · 사유 기록됨</span></div><span class="badge b-run">후속 4건</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h3>최근 활동</h3><a>활동 전체</a></div>
+      <div class="card-b"><div class="timeline">
+        <div class="tl"><b>파이어넷 · 스마트공장 후보 협의</b><span>어제 15:00 · 미팅 · 김OO 부장</span></div>
+        <div class="tl v"><b>AX Connect Day 참가 기업 12곳 등록</b><span>11월 22일 · 행사 · 명함 일괄 등록</span></div>
+        <div class="tl w"><b>유알커넥션 견적 발송</b><span>11월 20일 · 이메일</span></div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 고객 목록 + 우측 패널 ================= -->
+<section class="screen" id="cust">
+  <div class="head"><div><h1>고객</h1><p>기업·기관 48곳 · 목록에서 선택하면 오른쪽에서 바로 확인합니다.</p></div>
+    <div class="top-actions"><button class="btn">표로 편집</button><button class="btn primary">+ 고객 등록</button></div></div>
+  <div class="toolbar">
+    <button class="chip on">전체<em>48</em></button><button class="chip">기존 고객<em>27</em></button><button class="chip">신규<em>12</em></button><button class="chip">휴면<em>9</em></button><button class="chip">협력기업<em>14</em></button>
+    <div class="seg"><button class="on">표</button><button>카드</button></div>
+  </div>
+  <div class="split">
+    <div class="card wrap">
+      <table>
+        <thead><tr><th>기업</th><th>분류</th><th>사업 이력</th><th>최근 접점</th><th>담당</th></tr></thead>
+        <tbody>
+          <tr class="sel" data-open="1"><td><div class="co"><div class="logo" style="background:#e2e4f5;color:#434b99">파</div><div><b>(주)파이어넷</b><small>제조업 · 내화채움구조시스템</small></div></div></td><td><span class="badge b-run">기존 제안</span></td><td>3건</td><td class="muted">어제</td><td><span class="tag">주호정</span></td></tr>
+          <tr data-open="1"><td><div class="co"><div class="logo" style="background:#d3f1ec;color:#0b6b60">유</div><div><b>유알커넥션</b><small>소프트웨어 · 플랫폼 개발</small></div></div></td><td><span class="badge b-ok">수행 중</span></td><td>2건</td><td class="muted">11월 20일</td><td><span class="tag">주호정</span></td></tr>
+          <tr data-open="1"><td><div class="co"><div class="logo" style="background:#e6f3bd;color:#41590a">키</div><div><b>키자미테이블</b><small>소프트웨어 · CBT</small></div></div></td><td><span class="badge b-warn">협의 중</span></td><td>1건</td><td class="muted">11월 18일</td><td><span class="tag">팀원</span></td></tr>
+          <tr data-open="1"><td><div class="co"><div class="logo" style="background:#f8e8bd;color:#7a5400">위</div><div><b>위존</b><small>제조 · 학습데이터</small></div></div></td><td><span class="badge b-off">휴면</span></td><td>1건</td><td class="muted">142일 전</td><td><span class="tag">팀원</span></td></tr>
+          <tr data-open="1"><td><div class="co"><div class="logo" style="background:#f7d9d5;color:#9a2f2a">테</div><div><b>테스(주)</b><small>반도체 장비</small></div></div></td><td><span class="badge b-violet">신규</span></td><td>0건</td><td class="muted">11월 26일</td><td><span class="tag">주호정</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card drawer">
+      <div class="drawer-h">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start"><div class="logo" style="background:#e2e4f5;color:#434b99">파</div><button class="btn sm" data-go="cust360">전체 보기 →</button></div>
+        <h2>(주)파이어넷</h2><p class="muted" style="margin:2px 0 10px">제조업 · 내화채움구조시스템</p>
+        <div class="hero-tags"><span class="badge b-run">기존 제안</span><span class="tag">제조 AX</span><span class="tag">스마트공장</span></div>
+      </div>
+      <div class="mini3"><div><b>2</b><span>과거 신청</span></div><div><b>4</b><span>후속 후보</span></div><div><b>1</b><span>연계 협력사</span></div></div>
+      <div class="card-b">
+        <div class="sec-t">사업 이력</div>
+        <div class="hist"><div><b>2027 스마트공장 구축지원</b><span>사출공정 AI 검수·생산관리</span></div><span class="badge b-warn">검토 중</span></div>
+        <div class="hist"><div><b>2025 AI바우처</b><span>AI 기반 제품 검수</span></div><span class="badge b-off">미선정</span></div>
+        <div class="hist"><div><b>2025 데이터바우처</b><span>사출 품질정보 데이터셋</span></div><span class="badge b-off">미선정</span></div>
+        <div class="sec-t">담당자</div>
+        <div class="hist"><div class="avatar" style="width:30px;height:30px;font-size:12px">김</div><div><b>김OO 부장</b><span>기술개발팀</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 고객 360 ================= -->
+<section class="screen" id="cust360">
+  <div class="head" style="margin-bottom:10px"><div><div class="eyebrow">고객 › 기업 상세</div></div><div class="top-actions"><button class="btn sm" data-go="cust">← 목록</button></div></div>
+  <div class="card hero">
+    <div class="logo" style="background:#e2e4f5;color:#434b99">파</div>
+    <div><h2>(주)파이어넷</h2><p>제조업 · 내화채움구조시스템 · 사업자번호 확인됨</p>
+      <div class="hero-tags"><span class="badge b-run">기존 제안 고객</span><span class="tag">제조 AX</span><span class="tag">스마트공장</span><span class="tag">AI 검수</span></div></div>
+    <div class="hero-actions"><button class="btn">활동 기록</button><button class="btn primary">+ 사업 연결</button></div>
+  </div>
+  <div class="stat3">
+    <div class="card stat"><div class="kpi-ico" style="background:var(--off-soft);color:var(--off)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 4h9l3 3v13H6zM9 12h6M9 16h6"/></svg></div><div><b>2건</b><span>과거 신청</span></div></div>
+    <div class="card stat"><div class="kpi-ico" style="background:var(--accent-soft);color:var(--accent-ink)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/></svg></div><div><b>4건</b><span>후속 후보</span></div></div>
+    <div class="card stat"><div class="kpi-ico" style="background:var(--violet-soft);color:var(--violet)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="8" cy="12" r="3.5"/><circle cx="16" cy="12" r="3.5"/></svg></div><div><b>1개사</b><span>연계 협력사</span></div></div>
+  </div>
+  <div class="tabs"><button class="on">사업 이력</button><button>담당자</button><button>활동</button><button>기술수요</button><button>신규 사업 추천</button><button>관계도</button><button>문서</button></div>
+  <div class="cols">
+    <div class="card wrap">
+      <table>
+        <thead><tr><th>사업</th><th>역할</th><th>단계</th><th>결과</th></tr></thead>
+        <tbody>
+          <tr><td><b>2027 스마트공장 구축지원</b><div class="muted" style="font-size:12px">사출공정 AI 검수·생산관리·설비 연계</div><div class="step"><i class="d"></i><i class="d"></i><i></i><i></i><i></i></div></td><td><span class="tag">수요기업</span></td><td class="muted">제안·신청</td><td><span class="badge b-warn">검토 중</span></td></tr>
+          <tr><td><b>2025 AI바우처</b><div class="muted" style="font-size:12px">AI 기반 제품 검수 및 생산량 측정</div><div class="step"><i class="d"></i><i class="d"></i><i class="d"></i><i class="x"></i><i class="x"></i></div></td><td><span class="tag">수요기업</span></td><td class="muted">평가</td><td><span class="badge b-off">미선정</span></td></tr>
+          <tr><td><b>2025 데이터바우처</b><div class="muted" style="font-size:12px">사출 품질정보 관리 데이터셋 구축</div><div class="step"><i class="d"></i><i class="d"></i><i class="d"></i><i class="x"></i><i class="x"></i></div></td><td><span class="tag">수요기업</span></td><td class="muted">평가</td><td><span class="badge b-off">미선정</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <div class="card"><div class="card-h"><h3>다음 제안 후보</h3><span class="badge b-violet">추천</span></div><div class="card-b">
+        <div class="rec"><div><b>2026 제조 AI 데이터바우처 재신청</b><span>이전 미선정 사유 보완 시 가능 · 근거 2건</span></div><div class="score">82</div></div>
+        <div class="rec"><div><b>제조혁신 R&amp;D 공동 컨소시엄</b><span>연계 협력사 1곳 보유 기술과 일치</span></div><div class="score">74</div></div>
+        <p class="disclaim">추천은 확정 사실이 아닌 검토용 제안이며, 근거 자료와 검토 상태를 함께 표시합니다.</p>
+      </div></div>
+      <div class="card" style="margin-top:14px"><div class="card-h"><h3>타임라인</h3></div><div class="card-b"><div class="timeline">
+        <div class="tl"><b>스마트공장 후보 협의</b><span>어제 · 미팅 · 김OO 부장</span></div>
+        <div class="tl w"><b>사업계획서 초안 전달</b><span>11월 19일 · 이메일</span></div>
+        <div class="tl o"><b>2025 AI바우처 결과 확인</b><span>2025년 8월 · 미선정</span></div>
+      </div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 사업 ================= -->
+<section class="screen" id="proj">
+  <div class="head"><div><h1>사업</h1><p>정부지원사업 · 연구용역 · 컨소시엄을 단계별로 관리합니다.</p></div><div class="top-actions"><button class="btn">공고 등록</button><button class="btn primary">+ 사업 등록</button></div></div>
+  <div class="card" style="padding:18px;margin-bottom:14px">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;text-align:center">
+      <div><div class="eyebrow" style="color:var(--muted)">01</div><b>발굴·매칭</b><div class="kpi-num" style="font-size:26px;margin:4px 0">7</div></div>
+      <div><div class="eyebrow" style="color:var(--muted)">02</div><b>제안·신청</b><div class="kpi-num" style="font-size:26px;margin:4px 0">9</div></div>
+      <div><div class="eyebrow" style="color:var(--muted)">03</div><b>평가·선정</b><div class="kpi-num" style="font-size:26px;margin:4px 0">4</div></div>
+      <div><div class="eyebrow" style="color:var(--accent-ink)">04</div><b style="color:var(--accent-ink)">계약·수행</b><div class="kpi-num" style="font-size:26px;margin:4px 0;color:var(--accent-ink)">12</div></div>
+      <div><div class="eyebrow" style="color:var(--muted)">05</div><b>종료·확장</b><div class="kpi-num" style="font-size:26px;margin:4px 0">27</div></div>
+    </div>
+    <div class="step" style="margin-top:8px"><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i></i></div>
+  </div>
+  <div class="toolbar"><button class="chip on">전체<em>59</em></button><button class="chip">정부지원사업<em>41</em></button><button class="chip">연구용역<em>18</em></button><button class="chip">미선정 이력<em>14</em></button>
+    <div class="seg"><button class="on">표</button><button>타임라인</button></div></div>
+  <div class="card wrap"><table>
+    <thead><tr><th>사업명</th><th>유형</th><th>참여기관</th><th>단계</th><th>결과</th><th>예상 수주액</th></tr></thead>
+    <tbody>
+      <tr><td><b>2027 스마트공장 구축지원</b><div class="muted" style="font-size:12px">주관 중소벤처기업부</div></td><td><span class="tag">정부지원</span></td><td><span class="tag">파이어넷 · 수요</span> <span class="tag">TBELL · 공급</span></td><td class="muted">제안·신청</td><td><span class="badge b-warn">검토 중</span></td><td>—</td></tr>
+      <tr><td><b>플랫폼 고도화 용역</b><div class="muted" style="font-size:12px">발주 유알커넥션</div></td><td><span class="tag">연구용역</span></td><td><span class="tag">유알커넥션 · 발주</span> <span class="tag">TBELL · 수행</span></td><td class="muted">계약·수행</td><td><span class="badge b-run">수행 중</span></td><td>—</td></tr>
+      <tr><td><b>2025 AI바우처</b><div class="muted" style="font-size:12px">주관 NIA</div></td><td><span class="tag">정부지원</span></td><td><span class="tag">파이어넷 · 수요</span></td><td class="muted">평가·선정</td><td><span class="badge b-off">미선정</span></td><td>—</td></tr>
+    </tbody></table></div>
+</section>
+
+<!-- ================= 영업기회 ================= -->
+<section class="screen" id="opp">
+  <div class="head"><div><h1>영업기회</h1><p>카드를 끌어 단계를 옮깁니다. 선정·계약 단계로 가면 사업이 자동으로 만들어집니다.</p></div><div class="top-actions"><button class="btn">내 기회만</button><button class="btn primary">+ 기회 등록</button></div></div>
+  <div class="kanban">
+    <div class="col"><div class="col-h">수요 발굴<span>2</span></div>
+      <div class="kc"><small>위존</small><b>제조 학습데이터</b><div class="kc-f"><span class="badge b-off">신규</span><div class="av">주</div></div></div>
+      <div class="kc"><small>테스(주)</small><b>반도체 장비 데이터 수집</b><div class="kc-f"><span class="badge b-violet">행사 유입</span><div class="av">주</div></div></div></div>
+    <div class="col"><div class="col-h">사업 매칭<span>1</span></div>
+      <div class="kc"><small>파이어넷</small><b>스마트공장 후보</b><div class="kc-f"><span>적합도 82</span><div class="av">주</div></div></div></div>
+    <div class="col"><div class="col-h">고객 협의<span>1</span></div>
+      <div class="kc"><small>키자미테이블</small><b>CBT 해외 적용</b><div class="kc-f"><span>다음 미팅 12/1</span><div class="av">팀</div></div></div></div>
+    <div class="col"><div class="col-h">제안·신청<span>1</span></div>
+      <div class="kc"><small>파이어넷</small><b>사업계획서 작성</b><div class="kc-f"><span class="badge b-bad">마감 11/28</span><div class="av">주</div></div></div></div>
+    <div class="col"><div class="col-h">선정·계약<span>1</span></div>
+      <div class="kc"><small>계약금·협약</small><b>과업 범위 확정</b><div class="kc-f"><span class="badge b-ok">선정</span><div class="av">주</div></div></div></div>
+    <div class="col"><div class="col-h">수행·후속<span>1</span></div>
+      <div class="kc"><small>유알커넥션</small><b>플랫폼 고도화</b><div class="kc-f"><span class="badge b-run">수행 중</span><div class="av">팀</div></div></div></div>
+  </div>
+</section>
+
+<!-- ================= 활동 ================= -->
+<section class="screen" id="act">
+  <div class="head"><div><h1>활동</h1><p>행사 · 미팅 · 공고 마감 · 후속 연락을 한 달력에서 봅니다.</p></div>
+    <div class="top-actions"><div class="legend"><span><i style="background:#3fcfbd"></i>미팅</span><span><i style="background:#7d86d9"></i>행사</span><span><i style="background:#f0675f"></i>마감</span><span><i style="background:#f0b429"></i>후속</span></div>
+    <div class="seg" style="margin-left:12px"><button>월</button><button class="on">주</button><button>안건</button></div><button class="btn primary">+ 활동</button></div></div>
+  <div class="card cal">
+    <div class="cal-h"><div></div>
+      <div class="sun">일<b>22</b></div><div>월<b>23</b></div><div>화<b>24</b></div><div>수<b>25</b></div><div class="today">목<b>26</b></div><div>금<b>27</b></div><div>토<b>28</b></div></div>
+    <div class="cal-b">
+      <div class="hours"><div>9시</div><div>10시</div><div>11시</div><div>12시</div><div>13시</div><div>14시</div><div>15시</div><div>16시</div><div>17시</div></div>
+      <div class="day"></div>
+      <div class="day"><div class="ev e" style="top:28px;height:196px"><b>AX Connect Day</b>코엑스 · 참가 기업 12곳</div></div>
+      <div class="day"><div class="ev m" style="top:56px;height:56px"><b>유알커넥션 기술 미팅</b>10:00–11:00</div></div>
+      <div class="day"><div class="ev f" style="top:280px;height:40px"><b>견적 회신</b>14:00</div></div>
+      <div class="day today"><div class="ev m" style="top:112px;height:56px"><b>파이어넷 협의</b>11:00–12:00</div><div class="ev f" style="top:392px;height:40px"><b>과업 범위 회신</b>16:00</div><div class="now" style="top:226px"></div></div>
+      <div class="day"><div class="ev d" style="top:6px;height:34px"><b>AI바우처 마감</b>종일</div><div class="ev m" style="top:224px;height:56px"><b>키자미테이블 미팅</b>13:00–14:00</div></div>
+      <div class="day"></div>
+    </div>
+  </div>
+</section>
+
+<div class="note">UI 시안입니다. 화면의 숫자와 기업·사업 이름은 기획안 예시와 가상값이며 실제 데이터와 연결되어 있지 않습니다. 왼쪽 메뉴와 표의 행을 눌러 화면을 넘겨볼 수 있습니다.</div>
+    </main>
+  </div>
+</div>
+<script>
+const screens = document.querySelectorAll('.screen');
+const navBtns = document.querySelectorAll('#nav button');
+function go(id) {
+  screens.forEach(s => s.classList.toggle('on', s.id === id));
+  const key = id === 'cust360' ? 'cust' : id;
+  navBtns.forEach(b => b.classList.toggle('on', b.dataset.go === key));
+  document.querySelector('.body').scrollTop = 0;
+  history.replaceState(null, '', '#' + id);
+}
+document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
+document.querySelectorAll('tbody tr[data-open]').forEach(r => r.addEventListener('click', () => {
+  r.parentElement.querySelectorAll('tr').forEach(x => x.classList.remove('sel')); r.classList.add('sel');
+}));
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+  b.parentElement.querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on');
+}));
+window.addEventListener('hashchange', () => { const id = location.hash.slice(1); if (document.getElementById(id)) go(id); });
+const start = location.hash.slice(1); if (start && document.getElementById(start)) go(start);
+</script>
+</body>
+</html>

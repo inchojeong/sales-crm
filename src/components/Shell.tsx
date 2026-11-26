@@ -94,8 +94,8 @@ export function Shell({ children }: { children: ReactNode }) {
               <CalendarIcon />
             </span>
             <span>
-              <strong>영업활동</strong>
-              <small>사업전략팀</small>
+              <strong>Business Hub</strong>
+              <small>TBELL 사업전략팀</small>
             </span>
           </button>
           <nav className="side-nav" aria-label="주요 메뉴">
@@ -127,7 +127,7 @@ export function Shell({ children }: { children: ReactNode }) {
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="고객사, 담당자, 영업활동 검색"
+                placeholder="고객사, 담당자, 사업, 영업활동 검색"
                 aria-label="검색"
               />
             </form>

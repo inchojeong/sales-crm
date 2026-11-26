@@ -26,12 +26,12 @@ const DAY_START = 9 * 60
 const DAY_END = 18 * 60
 
 const CARD_TONE: Record<ActivityType, { bg: string; fg: string }> = {
-  meeting: { bg: '#ece8ff', fg: '#3d348b' },
-  email: { bg: '#e7f8ee', fg: '#14643a' },
-  proposal: { bg: '#e5f3ff', fg: '#1d4f91' },
-  call: { bg: '#fff4d8', fg: '#8a5a12' },
-  event: { bg: '#ffe8f0', fg: '#9d2458' },
-  other: { bg: '#eef1f6', fg: '#3e4654' },
+  meeting: { bg: '#d3f1ec', fg: '#0b5a51' },
+  email: { bg: '#e5f3b8', fg: '#41590a' },
+  proposal: { bg: '#edf5cf', fg: '#4a6a00' },
+  call: { bg: '#f8e8bd', fg: '#6b4a00' },
+  event: { bg: '#e2e4f5', fg: '#343b80' },
+  other: { bg: '#dde2df', fg: '#4f5a57' },
 }
 
 function minutesOf(value: string) {
